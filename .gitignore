@@ -1,0 +1,14 @@
+# Gradle / build
+.gradle/
+build/
+app/build/
+
+# Config local com credenciais — NUNCA versionar
+local.properties
+
+# IDE
+.idea/
+*.iml
+
+# Artefatos de crash/heap dump
+*.hprof

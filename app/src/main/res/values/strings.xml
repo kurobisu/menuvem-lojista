@@ -1,0 +1,78 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Menuvem Lojista</string>
+
+    <!-- Navigation -->
+    <string name="nav_home">Início</string>
+    <string name="nav_shopping">Compras</string>
+    <string name="nav_history">Histórico</string>
+
+    <!-- Home -->
+    <string name="home_title">Menuvem Lojista</string>
+    <string name="home_subtitle">Gestão inteligente de custos</string>
+    <string name="home_last_purchase">Última compra</string>
+    <string name="home_no_purchases">Nenhuma compra registrada</string>
+    <string name="home_create_list">Nova lista de compras</string>
+    <string name="home_view_all_lists">Ver todas as listas</string>
+    <string name="home_price_trends">Variação de preços</string>
+    <string name="home_no_inputs">Nenhum insumo cadastrado ainda</string>
+
+    <!-- Shopping List -->
+    <string name="shopping_title">Lista de Compras</string>
+    <string name="shopping_new_list">Nova Lista</string>
+    <string name="shopping_list_name_hint">Nome da lista (ex: Mercado - 12/08)</string>
+    <string name="shopping_search_hint">Buscar insumo...</string>
+    <string name="shopping_add_item">Adicionar item</string>
+    <string name="shopping_finish">Finalizar Compra</string>
+    <string name="shopping_total">Total</string>
+    <string name="shopping_items_count">%d itens</string>
+    <string name="shopping_items_checked">%d de %d comprados</string>
+    <string name="shopping_empty">Lista vazia. Adicione itens para começar.</string>
+    <string name="shopping_list_finalized">Compra finalizada! Custos atualizados.</string>
+    <string name="shopping_confirm_finish">Finalizar compra?</string>
+    <string name="shopping_confirm_finish_message">Os preços dos insumos vinculados serão atualizados automaticamente.</string>
+    <string name="shopping_confirm">Confirmar</string>
+    <string name="shopping_cancel">Cancelar</string>
+    <string name="shopping_delete_item">Remover item</string>
+    <string name="shopping_item_name_hint">Nome do item</string>
+    <string name="shopping_quantity_hint">Qtd</string>
+    <string name="shopping_unit_hint">Unidade</string>
+    <string name="shopping_price_hint">Preço (R$)</string>
+    <string name="shopping_save">Salvar</string>
+    <string name="shopping_lists_history">Histórico de Listas</string>
+    <string name="shopping_status_open">Aberta</string>
+    <string name="shopping_status_finalized">Finalizada</string>
+    <string name="shopping_my_lists">Minhas Listas</string>
+    <string name="shopping_open_list">Abrir lista</string>
+
+    <!-- Price History -->
+    <string name="history_title">Histórico de Preços</string>
+    <string name="history_empty">Nenhum insumo com histórico ainda.</string>
+    <string name="history_last_price">Último preço</string>
+    <string name="history_purchases">%d compras registradas</string>
+    <string name="history_trend_up">Alta</string>
+    <string name="history_trend_stable">Estável</string>
+    <string name="history_trend_down">Queda</string>
+    <string name="history_no_registered_input">Item não vinculado a insumo</string>
+    <string name="history_price_evolution">Evolução do preço</string>
+    <string name="history_by_unit">por %s</string>
+    <string name="history_purchases_label">Compras</string>
+
+    <!-- Currency -->
+    <string name="currency_format">R$ %s</string>
+    <string name="currency_symbol">R$</string>
+
+    <!-- Common -->
+    <string name="loading">Carregando...</string>
+    <string name="error_generic">Ocorreu um erro. Tente novamente.</string>
+    <string name="back">Voltar</string>
+    <string name="save">Salvar</string>
+    <string name="cancel">Cancelar</string>
+    <string name="delete">Excluir</string>
+    <string name="edit">Editar</string>
+    <string name="confirm">Confirmar</string>
+    <string name="close">Fechar</string>
+    <string name="search">Buscar</string>
+    <string name="registered_input">Insumo cadastrado</string>
+    <string name="not_registered">Não cadastrado</string>
+</resources>
