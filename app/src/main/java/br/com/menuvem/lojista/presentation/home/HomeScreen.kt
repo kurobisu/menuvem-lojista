@@ -46,6 +46,7 @@ fun HomeScreen(
     onNavigateToProdutos: () -> Unit,
     onNavigateToProduto: (Long) -> Unit,
     onNavigateToInsumos: () -> Unit,
+    onNavigateToComponentes: () -> Unit,
     viewModel: HomeViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
@@ -164,6 +165,13 @@ fun HomeScreen(
                             subtitulo = "Biblioteca e custos",
                             icon = Icons.Outlined.Inventory2,
                             onClick = onNavigateToInsumos,
+                            modifier = Modifier.weight(1f)
+                        )
+                        PrecificacaoCard(
+                            titulo = "Componentes",
+                            subtitulo = "Blocos reutilizáveis",
+                            icon = Icons.Filled.Widgets,
+                            onClick = onNavigateToComponentes,
                             modifier = Modifier.weight(1f)
                         )
                     }

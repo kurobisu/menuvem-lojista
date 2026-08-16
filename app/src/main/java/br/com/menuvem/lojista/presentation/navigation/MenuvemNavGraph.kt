@@ -6,6 +6,8 @@ import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.navArgument
+import br.com.menuvem.lojista.presentation.componentes.ComponenteDetailScreen
+import br.com.menuvem.lojista.presentation.componentes.ComponentesScreen
 import br.com.menuvem.lojista.presentation.history.InsumoHistoryScreen
 import br.com.menuvem.lojista.presentation.history.PriceHistoryScreen
 import br.com.menuvem.lojista.presentation.home.HomeScreen
@@ -35,7 +37,8 @@ fun MenuvemNavGraph(navController: NavHostController) {
                 onNavigateToProduto = { produtoId ->
                     navController.navigate(Screen.ProdutoDetail.createRoute(produtoId))
                 },
-                onNavigateToInsumos = { navController.navigate(Screen.Insumos.route) }
+                onNavigateToInsumos = { navController.navigate(Screen.Insumos.route) },
+                onNavigateToComponentes = { navController.navigate(Screen.Componentes.route) }
             )
         }
 
@@ -93,6 +96,25 @@ fun MenuvemNavGraph(navController: NavHostController) {
             arguments = listOf(navArgument("produtoId") { type = NavType.LongType })
         ) {
             ProdutoDetailScreen(
+                onBack = { navController.popBackStack() },
+                onNavigateToComponentes = { navController.navigate(Screen.Componentes.route) }
+            )
+        }
+
+        composable(Screen.Componentes.route) {
+            ComponentesScreen(
+                onNavigateToComponente = { componenteId ->
+                    navController.navigate(Screen.ComponenteDetail.createRoute(componenteId))
+                },
+                onBack = { navController.popBackStack() }
+            )
+        }
+
+        composable(
+            route = Screen.ComponenteDetail.route,
+            arguments = listOf(navArgument("componenteId") { type = NavType.LongType })
+        ) {
+            ComponenteDetailScreen(
                 onBack = { navController.popBackStack() }
             )
         }

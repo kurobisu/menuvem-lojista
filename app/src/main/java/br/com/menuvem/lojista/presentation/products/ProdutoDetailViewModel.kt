@@ -6,14 +6,21 @@ import androidx.lifecycle.viewModelScope
 import br.com.menuvem.lojista.domain.model.Insumo
 import br.com.menuvem.lojista.domain.model.ItemFichaComInsumo
 import br.com.menuvem.lojista.domain.model.ItemFichaTecnica
+import br.com.menuvem.lojista.domain.model.ProdutoComponente
+import br.com.menuvem.lojista.domain.model.ProdutoComponenteCompleto
+import br.com.menuvem.lojista.domain.usecase.AddComponenteToProdutoUseCase
 import br.com.menuvem.lojista.domain.usecase.DeleteItemFichaUseCase
+import br.com.menuvem.lojista.domain.usecase.DeleteProdutoComponenteUseCase
 import br.com.menuvem.lojista.domain.usecase.DeleteProdutoUseCase
 import br.com.menuvem.lojista.domain.usecase.DuplicateFichaTecnicaUseCase
+import br.com.menuvem.lojista.domain.usecase.GetComponentesUseCase
 import br.com.menuvem.lojista.domain.usecase.GetFichaTecnicaUseCase
+import br.com.menuvem.lojista.domain.usecase.GetProdutoComponentesUseCase
 import br.com.menuvem.lojista.domain.usecase.GetProdutosComCustoUseCase
 import br.com.menuvem.lojista.domain.usecase.SaveItemFichaUseCase
 import br.com.menuvem.lojista.domain.usecase.SaveProdutoUseCase
 import br.com.menuvem.lojista.domain.usecase.SearchInsumosUseCase
+import br.com.menuvem.lojista.domain.usecase.UpdateProdutoComponenteUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
@@ -31,12 +38,17 @@ class ProdutoDetailViewModel @Inject constructor(
     savedStateHandle: SavedStateHandle,
     private val getProdutosComCustoUseCase: GetProdutosComCustoUseCase,
     private val getFichaTecnicaUseCase: GetFichaTecnicaUseCase,
+    private val getProdutoComponentesUseCase: GetProdutoComponentesUseCase,
+    private val getComponentesUseCase: GetComponentesUseCase,
     private val saveProdutoUseCase: SaveProdutoUseCase,
     private val deleteProdutoUseCase: DeleteProdutoUseCase,
     private val saveItemFichaUseCase: SaveItemFichaUseCase,
     private val deleteItemFichaUseCase: DeleteItemFichaUseCase,
     private val duplicateFichaUseCase: DuplicateFichaTecnicaUseCase,
-    private val searchInsumosUseCase: SearchInsumosUseCase
+    private val searchInsumosUseCase: SearchInsumosUseCase,
+    private val addComponenteToProdutoUseCase: AddComponenteToProdutoUseCase,
+    private val updateProdutoComponenteUseCase: UpdateProdutoComponenteUseCase,
+    private val deleteProdutoComponenteUseCase: DeleteProdutoComponenteUseCase
 ) : ViewModel() {
 
     val produtoId: Long = savedStateHandle.get<Long>("produtoId") ?: -1L
@@ -50,6 +62,8 @@ class ProdutoDetailViewModel @Inject constructor(
         if (produtoId > 0) {
             observeProduto()
             observeFicha()
+            observeComponentes()
+            observeTodosComponentes()
         }
     }
 
@@ -77,6 +91,26 @@ class ProdutoDetailViewModel @Inject constructor(
                 .catch { e -> _uiState.update { it.copy(error = e.message) } }
                 .collectLatest { itens ->
                     _uiState.update { it.copy(itensFicha = itens) }
+                }
+        }
+    }
+
+    private fun observeComponentes() {
+        viewModelScope.launch {
+            getProdutoComponentesUseCase(produtoId)
+                .catch { e -> _uiState.update { it.copy(error = e.message) } }
+                .collectLatest { componentes ->
+                    _uiState.update { it.copy(componentes = componentes) }
+                }
+        }
+    }
+
+    private fun observeTodosComponentes() {
+        viewModelScope.launch {
+            getComponentesUseCase()
+                .catch { e -> _uiState.update { it.copy(error = e.message) } }
+                .collectLatest { componentes ->
+                    _uiState.update { it.copy(todosComponentes = componentes) }
                 }
         }
     }
@@ -139,6 +173,42 @@ class ProdutoDetailViewModel @Inject constructor(
 
     fun removeItem(item: ItemFichaTecnica) {
         viewModelScope.launch { deleteItemFichaUseCase(item) }
+    }
+
+    // ── Componentes no produto ───────────────────────────────────────────────
+
+    fun onShowAddComponenteSheet() {
+        _uiState.update { it.copy(showAddComponenteSheet = true) }
+    }
+
+    fun onHideAddComponenteSheet() {
+        _uiState.update { it.copy(showAddComponenteSheet = false) }
+    }
+
+    fun addComponente(componenteId: Long, multiplicador: Double) {
+        viewModelScope.launch {
+            addComponenteToProdutoUseCase(produtoId, componenteId, multiplicador)
+            onHideAddComponenteSheet()
+        }
+    }
+
+    fun onEditComponente(completo: ProdutoComponenteCompleto) {
+        _uiState.update { it.copy(componenteEmEdicao = completo) }
+    }
+
+    fun onHideEditComponente() {
+        _uiState.update { it.copy(componenteEmEdicao = null) }
+    }
+
+    fun updateMultiplicador(vinculo: ProdutoComponente, multiplicador: Double) {
+        viewModelScope.launch {
+            updateProdutoComponenteUseCase(vinculo, multiplicador)
+            onHideEditComponente()
+        }
+    }
+
+    fun removeComponente(vinculo: ProdutoComponente) {
+        viewModelScope.launch { deleteProdutoComponenteUseCase(vinculo) }
     }
 
     // ── Dados do produto ─────────────────────────────────────────────────────

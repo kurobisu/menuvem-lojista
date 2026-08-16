@@ -2,11 +2,14 @@ package br.com.menuvem.lojista.data.repository
 
 import br.com.menuvem.lojista.data.remote.dto.ItemFichaTecnicaDto
 import br.com.menuvem.lojista.data.remote.dto.ItemFichaTecnicaInsertDto
+import br.com.menuvem.lojista.data.remote.dto.ProdutoComponenteDto
+import br.com.menuvem.lojista.data.remote.dto.ProdutoComponenteInsertDto
 import br.com.menuvem.lojista.data.remote.dto.ProdutoDto
 import br.com.menuvem.lojista.data.remote.dto.ProdutoInsertDto
 import br.com.menuvem.lojista.data.remote.tableListFlow
 import br.com.menuvem.lojista.domain.model.ItemFichaTecnica
 import br.com.menuvem.lojista.domain.model.Produto
+import br.com.menuvem.lojista.domain.model.ProdutoComponente
 import br.com.menuvem.lojista.domain.repository.ProdutoRepository
 import io.github.jan.supabase.SupabaseClient
 import io.github.jan.supabase.postgrest.postgrest
@@ -115,8 +118,59 @@ class ProdutoRepositoryImpl @Inject constructor(
         refresh.tryEmit(Unit)
     }
 
+    // ── Componentes no produto (produto_componentes) ────────────────────────
+
+    override fun getProdutoComponentesByProduto(produtoId: Long): Flow<List<ProdutoComponente>> =
+        client.tableListFlow(TABLE_PRODUTO_COMPONENTES, refresh) {
+            client.postgrest[TABLE_PRODUTO_COMPONENTES]
+                .select { filter { eq("produto_id", produtoId) } }
+                .decodeList<ProdutoComponenteDto>()
+        }.map { list -> list.map { it.toDomain() } }
+
+    override fun getAllProdutoComponentes(): Flow<List<ProdutoComponente>> =
+        client.tableListFlow(TABLE_PRODUTO_COMPONENTES, refresh) {
+            client.postgrest[TABLE_PRODUTO_COMPONENTES]
+                .select()
+                .decodeList<ProdutoComponenteDto>()
+        }.map { list -> list.map { it.toDomain() } }
+
+    override suspend fun getProdutoComponentesByProdutoOnce(produtoId: Long): List<ProdutoComponente> =
+        client.postgrest[TABLE_PRODUTO_COMPONENTES]
+            .select { filter { eq("produto_id", produtoId) } }
+            .decodeList<ProdutoComponenteDto>()
+            .map { it.toDomain() }
+
+    override suspend fun insertProdutoComponente(vinculo: ProdutoComponente): Long {
+        val inserido = client.postgrest[TABLE_PRODUTO_COMPONENTES]
+            .insert(ProdutoComponenteInsertDto.fromDomain(vinculo)) {
+                select()
+            }.decodeSingle<ProdutoComponenteDto>()
+        refresh.tryEmit(Unit)
+        return inserido.id
+    }
+
+    override suspend fun updateProdutoComponente(vinculo: ProdutoComponente) {
+        client.postgrest[TABLE_PRODUTO_COMPONENTES].update({
+            set("multiplicador", vinculo.multiplicador)
+        }) {
+            filter { eq("id", vinculo.id) }
+        }
+        refresh.tryEmit(Unit)
+    }
+
+    override suspend fun deleteProdutoComponente(vinculo: ProdutoComponente) {
+        client.postgrest[TABLE_PRODUTO_COMPONENTES].delete { filter { eq("id", vinculo.id) } }
+        refresh.tryEmit(Unit)
+    }
+
+    override suspend fun deleteProdutoComponentesByProduto(produtoId: Long) {
+        client.postgrest[TABLE_PRODUTO_COMPONENTES].delete { filter { eq("produto_id", produtoId) } }
+        refresh.tryEmit(Unit)
+    }
+
     private companion object {
         const val TABLE_PRODUTOS = "produtos"
         const val TABLE_FICHA = "itens_ficha_tecnica"
+        const val TABLE_PRODUTO_COMPONENTES = "produto_componentes"
     }
 }

@@ -22,6 +22,7 @@ Products & ficha técnica — **implemented** (domain + repositories + screens):
 - **Loss/yield**: optional % loss per ficha técnica item (default 0%; e.g. 1 kg of tomato yields 800 g, raising the real portion cost).
 - **Insumo cost source**: auto-updated from finalized shopping lists (HistoricoPreco), with manual override in the insumo library ("biblioteca").
 - **Packaging = categorized insumo**: caixa/copo/sacola is an insumo of category "embalagem" — reuses shopping lists, price history and unit conversion, and enters the ficha técnica as a normal item.
+- **Componentes (blocos reutilizáveis de ficha técnica)** — **implemented**: a `Componente` is a reusable template of insumos (e.g. "Pizza - Massa Grande 35cm" tipo `MASSA`, "Pizza Sabor - Calabresa" tipo `SABOR`) stored in its own tables (`componentes`, `itens_componente`). A product's ficha técnica = **componentes aplicados** (`produto_componentes`, each with a `multiplicador`) + **insumos avulsos** (classic `itens_ficha_tecnica`). The multiplicador handles fractioning: sabor único = 1.0, 2 sabores na mesma massa = 0.5 (metade), 3 sabores = 1/3. Cost engine sums loose items + (component items × multiplicador). Screens: `presentation/componentes` (library + editor) + "Componente"/"Insumo" buttons in product detail. "Copiar ficha" now also copies `produto_componentes` — so a product can be fully cloned and its ficha edited (e.g. an "Hambúrguer de Calabresa" reusing the same insumos). Sharing division is divisor-based (`DivisorPizzaSelector`, helpers `multiplicadorDeDivisor`/`divisorDeMultiplicador`/`descreverMultiplicador` in `presentation/components`).
 - **Suppliers are optional** (not yet implemented): a finalized shopping list may record a fornecedor (never mandatory) — enables per-insumo price comparison across suppliers.
 
 Pricing:
@@ -58,7 +59,7 @@ Entry: `MenuvemApplication` (@HiltAndroidApp) → `MainActivity` (session gate: 
 
 - `data/remote` — Supabase infra: `dto/` (serializable DTOs), `SupabaseTableFlow.kt` (reactive table flows), `AuthManager.kt`; `data/repository` — repository impls talking PostgREST
 - `domain` — `model`, `repository` (interfaces), `usecase` (one class per use case) — untouched by the backend swap
-- `presentation/<feature>` — Screen + ViewModel + UiState per feature (`auth`, `home`, `shopping`, `history`, `products`, `insumos`); shared composables in `presentation/components`
+- `presentation/<feature>` — Screen + ViewModel + UiState per feature (`auth`, `home`, `shopping`, `history`, `products`, `insumos`, `componentes`); shared composables in `presentation/components`
 - `di` — Hilt modules (`SupabaseModule` provides the client; `RepositoryModule` binds impls)
 - `supabase/schema.sql` — DDL to run once in the Supabase SQL editor (tables + RLS + Realtime publication)
 

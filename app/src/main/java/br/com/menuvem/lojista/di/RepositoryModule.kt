@@ -1,9 +1,11 @@
 package br.com.menuvem.lojista.di
 
+import br.com.menuvem.lojista.data.repository.ComponenteRepositoryImpl
 import br.com.menuvem.lojista.data.repository.HistoricoPrecoRepositoryImpl
 import br.com.menuvem.lojista.data.repository.InsumoRepositoryImpl
 import br.com.menuvem.lojista.data.repository.ListaComprasRepositoryImpl
 import br.com.menuvem.lojista.data.repository.ProdutoRepositoryImpl
+import br.com.menuvem.lojista.domain.repository.ComponenteRepository
 import br.com.menuvem.lojista.domain.repository.HistoricoPrecoRepository
 import br.com.menuvem.lojista.domain.repository.InsumoRepository
 import br.com.menuvem.lojista.domain.repository.ListaComprasRepository
@@ -37,4 +39,8 @@ abstract class RepositoryModule {
     @Binds
     @Singleton
     abstract fun bindProdutoRepository(impl: ProdutoRepositoryImpl): ProdutoRepository
+
+    @Binds
+    @Singleton
+    abstract fun bindComponenteRepository(impl: ComponenteRepositoryImpl): ComponenteRepository
 }

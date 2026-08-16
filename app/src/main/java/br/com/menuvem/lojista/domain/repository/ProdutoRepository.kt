@@ -2,6 +2,7 @@ package br.com.menuvem.lojista.domain.repository
 
 import br.com.menuvem.lojista.domain.model.ItemFichaTecnica
 import br.com.menuvem.lojista.domain.model.Produto
+import br.com.menuvem.lojista.domain.model.ProdutoComponente
 import kotlinx.coroutines.flow.Flow
 
 /**
@@ -22,4 +23,12 @@ interface ProdutoRepository {
     suspend fun updateItemFicha(item: ItemFichaTecnica)
     suspend fun deleteItemFicha(item: ItemFichaTecnica)
     suspend fun deleteItensFichaByProduto(produtoId: Long)
+
+    fun getProdutoComponentesByProduto(produtoId: Long): Flow<List<ProdutoComponente>>
+    fun getAllProdutoComponentes(): Flow<List<ProdutoComponente>>
+    suspend fun getProdutoComponentesByProdutoOnce(produtoId: Long): List<ProdutoComponente>
+    suspend fun insertProdutoComponente(vinculo: ProdutoComponente): Long
+    suspend fun updateProdutoComponente(vinculo: ProdutoComponente)
+    suspend fun deleteProdutoComponente(vinculo: ProdutoComponente)
+    suspend fun deleteProdutoComponentesByProduto(produtoId: Long)
 }

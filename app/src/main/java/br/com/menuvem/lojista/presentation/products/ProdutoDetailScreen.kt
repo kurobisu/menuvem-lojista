@@ -4,7 +4,6 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Add
@@ -12,27 +11,34 @@ import androidx.compose.material.icons.filled.ContentCopy
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Warning
+import androidx.compose.material.icons.filled.Widgets
 import androidx.compose.material.icons.outlined.Receipt
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import br.com.menuvem.lojista.domain.model.ItemFichaComInsumo
 import br.com.menuvem.lojista.domain.model.ProdutoComCusto
+import br.com.menuvem.lojista.domain.model.ProdutoComponenteCompleto
+import br.com.menuvem.lojista.presentation.components.EditarQuantidadeDialog
 import br.com.menuvem.lojista.presentation.components.EmptyState
+import br.com.menuvem.lojista.presentation.components.InsumoQuantidadeRow
+import br.com.menuvem.lojista.presentation.components.descreverMultiplicador
+import br.com.menuvem.lojista.presentation.components.divisorDeMultiplicador
 import br.com.menuvem.lojista.presentation.components.formatarMoeda
+import br.com.menuvem.lojista.presentation.components.formatarTipo
 import br.com.menuvem.lojista.ui.theme.*
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ProdutoDetailScreen(
     onBack: () -> Unit,
+    onNavigateToComponentes: () -> Unit,
     viewModel: ProdutoDetailViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
@@ -119,6 +125,15 @@ fun ProdutoDetailScreen(
                                 Spacer(modifier = Modifier.width(4.dp))
                                 Text("Copiar ficha", style = MaterialTheme.typography.labelMedium)
                             }
+                            TextButton(onClick = viewModel::onShowAddComponenteSheet) {
+                                Icon(
+                                    Icons.Filled.Widgets,
+                                    contentDescription = null,
+                                    modifier = Modifier.size(16.dp)
+                                )
+                                Spacer(modifier = Modifier.width(4.dp))
+                                Text("Componente", style = MaterialTheme.typography.labelMedium)
+                            }
                             TextButton(onClick = viewModel::onShowAddSheet) {
                                 Icon(
                                     Icons.Default.Add,
@@ -132,18 +147,49 @@ fun ProdutoDetailScreen(
                     }
                 }
 
-                if (uiState.itensFicha.isEmpty()) {
+                if (uiState.componentes.isNotEmpty()) {
+                    item {
+                        Text(
+                            text = "Componentes",
+                            style = MaterialTheme.typography.titleSmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                    items(uiState.componentes, key = { "comp_${it.vinculo.id}" }) { item ->
+                        ComponenteNoProdutoCard(
+                            item = item,
+                            onClick = { viewModel.onEditComponente(item) },
+                            onDelete = { viewModel.removeComponente(item.vinculo) }
+                        )
+                    }
+                }
+
+                if (uiState.itensFicha.isNotEmpty() || uiState.componentes.isNotEmpty()) {
+                    item {
+                        Text(
+                            text = "Insumos",
+                            style = MaterialTheme.typography.titleSmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                }
+
+                if (uiState.itensFicha.isEmpty() && uiState.componentes.isEmpty()) {
                     item {
                         EmptyState(
                             icon = Icons.Outlined.Receipt,
                             title = "Ficha técnica vazia",
-                            subtitle = "Adicione os insumos que compõem este produto para calcular o custo por porção"
+                            subtitle = "Adicione componentes reutilizáveis ou insumos avulsos para calcular o custo por porção"
                         )
                     }
                 } else {
-                    items(uiState.itensFicha, key = { it.item.id }) { itemComInsumo ->
-                        FichaItemRow(
-                            item = itemComInsumo,
+                    items(uiState.itensFicha, key = { "item_${it.item.id}" }) { itemComInsumo ->
+                        InsumoQuantidadeRow(
+                            nome = itemComInsumo.insumo.nome,
+                            quantidade = itemComInsumo.item.quantidade,
+                            unidade = itemComInsumo.insumo.unidadeUso,
+                            perdaPercentual = itemComInsumo.item.perdaPercentual,
+                            custo = itemComInsumo.custo,
                             onClick = { viewModel.onEditItem(itemComInsumo) },
                             onDelete = { viewModel.removeItem(itemComInsumo.item) }
                         )
@@ -174,12 +220,38 @@ fun ProdutoDetailScreen(
         )
     }
 
+    if (uiState.showAddComponenteSheet) {
+        AddComponenteSheet(
+            componentes = uiState.todosComponentes,
+            onAddComponente = viewModel::addComponente,
+            onGerenciarComponentes = {
+                viewModel.onHideAddComponenteSheet()
+                onNavigateToComponentes()
+            },
+            onDismiss = viewModel::onHideAddComponenteSheet
+        )
+    }
+
     uiState.itemEmEdicao?.let { itemComInsumo ->
-        EditFichaItemDialog(
-            item = itemComInsumo,
+        EditarQuantidadeDialog(
+            titulo = itemComInsumo.insumo.nome,
+            unidadeUso = itemComInsumo.insumo.unidadeUso,
+            quantidadeInicial = itemComInsumo.item.quantidade,
+            perdaInicial = itemComInsumo.item.perdaPercentual,
             onDismiss = viewModel::onHideEditItem,
             onConfirm = { quantidade, perda ->
                 viewModel.updateItem(itemComInsumo.item, quantidade, perda)
+            }
+        )
+    }
+
+    uiState.componenteEmEdicao?.let { completo ->
+        SeletorDivisaoDialog(
+            titulo = completo.componente.nome,
+            divisorInicial = divisorDeMultiplicador(completo.vinculo.multiplicador),
+            onDismiss = viewModel::onHideEditComponente,
+            onConfirm = { multiplicador ->
+                viewModel.updateMultiplicador(completo.vinculo, multiplicador)
             }
         )
     }
@@ -191,7 +263,7 @@ fun ProdutoDetailScreen(
             text = {
                 Column {
                     Text(
-                        "Substitui a ficha atual pela ficha de:",
+                        "Substitui a ficha atual (componentes e insumos) pela ficha de:",
                         style = MaterialTheme.typography.bodyMedium
                     )
                     Spacer(modifier = Modifier.height(8.dp))
@@ -318,8 +390,8 @@ private fun ResumoCustoCard(item: ProdutoComCusto) {
 }
 
 @Composable
-private fun FichaItemRow(
-    item: ItemFichaComInsumo,
+private fun ComponenteNoProdutoCard(
+    item: ProdutoComponenteCompleto,
     onClick: () -> Unit,
     onDelete: () -> Unit
 ) {
@@ -332,30 +404,56 @@ private fun FichaItemRow(
             modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
+            Icon(
+                imageVector = Icons.Filled.Widgets,
+                contentDescription = null,
+                tint = PurplePrimary,
+                modifier = Modifier.size(24.dp)
+            )
+            Spacer(modifier = Modifier.width(12.dp))
             Column(modifier = Modifier.weight(1f)) {
                 Text(
-                    text = item.insumo.nome,
+                    text = item.componente.nome,
                     style = MaterialTheme.typography.titleSmall,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis
                 )
-                val perdaTexto = if (item.item.perdaPercentual > 0)
-                    " · perda ${String.format("%.0f%%", item.item.perdaPercentual)}" else ""
+                Spacer(modifier = Modifier.height(2.dp))
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Surface(shape = RoundedCornerShape(50), color = PurpleContainer) {
+                        Text(
+                            text = formatarTipo(item.componente.tipo),
+                            style = MaterialTheme.typography.labelSmall,
+                            color = PurpleOnContainer,
+                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp)
+                        )
+                    }
+                    Spacer(modifier = Modifier.width(6.dp))
+                    Text(
+                        text = "${item.quantidadeItens} insumo(s) · ${descreverMultiplicador(item.vinculo.multiplicador)}",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                }
+            }
+            Column(horizontalAlignment = Alignment.End) {
                 Text(
-                    text = "${formatarQuantidade(item.item.quantidade)} ${item.insumo.unidadeUso}$perdaTexto",
-                    style = MaterialTheme.typography.bodySmall,
+                    text = "R$ ${formatarMoeda(item.custo)}",
+                    style = MaterialTheme.typography.titleSmall,
+                    fontWeight = FontWeight.SemiBold
+                )
+                Text(
+                    text = "custo no produto",
+                    style = MaterialTheme.typography.labelSmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
-            Text(
-                text = "R$ ${formatarMoeda(item.custo)}",
-                style = MaterialTheme.typography.titleSmall,
-                fontWeight = FontWeight.SemiBold
-            )
             IconButton(onClick = onDelete) {
                 Icon(
                     Icons.Default.Delete,
-                    contentDescription = "Remover item",
+                    contentDescription = "Remover componente",
                     tint = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.size(20.dp)
                 )
@@ -363,62 +461,3 @@ private fun FichaItemRow(
         }
     }
 }
-
-@Composable
-private fun EditFichaItemDialog(
-    item: ItemFichaComInsumo,
-    onDismiss: () -> Unit,
-    onConfirm: (quantidade: Double, perda: Double) -> Unit
-) {
-    var quantidade by remember {
-        mutableStateOf(formatarQuantidade(item.item.quantidade).replace('.', ','))
-    }
-    var perda by remember {
-        mutableStateOf(
-            if (item.item.perdaPercentual % 1.0 == 0.0) item.item.perdaPercentual.toInt().toString()
-            else item.item.perdaPercentual.toString().replace('.', ',')
-        )
-    }
-
-    val quantidadeVal = quantidade.replace(",", ".").toDoubleOrNull()
-    val perdaVal = perda.replace(",", ".").toDoubleOrNull()
-    val isValid = quantidadeVal != null && quantidadeVal > 0 &&
-            perdaVal != null && perdaVal in 0.0..99.9
-
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        title = { Text(item.insumo.nome, maxLines = 1, overflow = TextOverflow.Ellipsis) },
-        text = {
-            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                OutlinedTextField(
-                    value = quantidade,
-                    onValueChange = { quantidade = it },
-                    label = { Text("Quantidade (${item.insumo.unidadeUso})") },
-                    singleLine = true,
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
-                    modifier = Modifier.fillMaxWidth()
-                )
-                OutlinedTextField(
-                    value = perda,
-                    onValueChange = { perda = it },
-                    label = { Text("Perda (%)") },
-                    singleLine = true,
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
-                    modifier = Modifier.fillMaxWidth()
-                )
-            }
-        },
-        confirmButton = {
-            TextButton(
-                onClick = { onConfirm(quantidadeVal!!, perdaVal!!) },
-                enabled = isValid
-            ) { Text("Salvar") }
-        },
-        dismissButton = {
-            TextButton(onClick = onDismiss) { Text("Cancelar") }
-        }
-    )
-}
-
-private fun formatarQuantidade(valor: Double): String =
-    if (valor % 1.0 == 0.0) valor.toInt().toString() else String.format("%.2f", valor)
