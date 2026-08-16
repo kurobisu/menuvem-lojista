@@ -25,7 +25,7 @@ class AddItemToListaUseCase @Inject constructor(
             nomeItem = if (insumo != null) insumo.nome else nomeItem.trim(),
             quantidade = quantidade,
             unidade = if (insumo != null) insumo.unidadeCompra else unidade,
-            precoUnitario = if (insumo != null) insumo.custoAtual else precoUnitario
+            precoUnitario = if (insumo != null && precoUnitario <= 0.0) insumo.custoAtual else precoUnitario
         )
         return repository.insertItem(item)
     }

@@ -9,6 +9,9 @@ import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.channelFlow
 import kotlinx.coroutines.launch
+import java.util.concurrent.atomic.AtomicLong
+
+private val channelCounter = AtomicLong(0)
 
 /**
  * Flow reativo de uma tabela do Supabase:
@@ -18,6 +21,10 @@ import kotlinx.coroutines.launch
  *
  * Se o Realtime não estiver habilitado na tabela, o item 2 ainda garante
  * consistência local.
+ *
+ * ATENÇÃO: o id do channel precisa ser único por flow — o Realtime devolve a
+ * instância existente para ids repetidos, e chamar postgresChangeFlow num
+ * channel já "joined" lança IllegalStateException.
  */
 fun <T> SupabaseClient.tableListFlow(
     table: String,
@@ -28,7 +35,7 @@ fun <T> SupabaseClient.tableListFlow(
 
     launch { localRefresh.collect { send(fetch()) } }
 
-    val realtimeChannel = channel("menuvem-$table")
+    val realtimeChannel = channel("menuvem-$table-${channelCounter.incrementAndGet()}")
     val changes = realtimeChannel.postgresChangeFlow<PostgresAction>(schema = "public") {
         this.table = table
     }

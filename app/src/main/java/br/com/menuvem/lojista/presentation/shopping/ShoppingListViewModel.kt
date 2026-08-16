@@ -73,7 +73,9 @@ class ShoppingListViewModel @Inject constructor(
         searchJob = viewModelScope.launch {
             delay(300)
             searchInsumosUseCase(query)
-                .take(1)
+                .catch { e ->
+                    _uiState.update { it.copy(isSearching = false, error = e.message) }
+                }
                 .collectLatest { results ->
                     _uiState.update { it.copy(searchResults = results, isSearching = false) }
                 }

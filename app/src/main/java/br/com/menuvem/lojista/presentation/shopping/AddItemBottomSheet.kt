@@ -39,7 +39,7 @@ fun AddItemBottomSheet(
     isSearching: Boolean,
     onSearchChanged: (String) -> Unit,
     onAddFreeItem: (nome: String, quantidade: Double, unidade: String, preco: Double) -> Unit,
-    onAddInsumo: (insumo: Insumo, quantidade: Double) -> Unit,
+    onAddInsumo: (insumo: Insumo, quantidade: Double, preco: Double) -> Unit,
     onDismiss: () -> Unit
 ) {
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
@@ -242,7 +242,11 @@ fun AddItemBottomSheet(
                     val precoVal = preco.replace(",", ".").toDoubleOrNull() ?: 0.0
 
                     if (selectedInsumo != null) {
-                        onAddInsumo(selectedInsumo!!, qtd)
+                        onAddInsumo(
+                            selectedInsumo!!,
+                            qtd,
+                            preco.replace(",", ".").toDoubleOrNull() ?: 0.0
+                        )
                     } else {
                         onAddFreeItem(nomeItem, qtd, unidade, precoVal)
                     }

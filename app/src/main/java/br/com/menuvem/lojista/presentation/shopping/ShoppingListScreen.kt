@@ -288,12 +288,12 @@ fun ShoppingListScreen(
                 onAddFreeItem = { nome, qtd, unidade, preco ->
                     viewModel.addItem(nome, qtd, unidade, preco)
                 },
-                onAddInsumo = { insumo, qtd ->
+                onAddInsumo = { insumo, qtd, preco ->
                     viewModel.addItem(
                         nomeItem = insumo.nome,
                         quantidade = qtd,
                         unidade = insumo.unidadeCompra,
-                        precoUnitario = insumo.custoAtual,
+                        precoUnitario = preco,
                         insumo = insumo
                     )
                 },

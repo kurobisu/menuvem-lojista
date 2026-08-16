@@ -82,7 +82,7 @@ fun ItemListaCard(
             Checkbox(
                 checked = item.comprado,
                 onCheckedChange = { checked ->
-                    val precoFinal = preco.toDoubleOrNull() ?: 0.0
+                    val precoFinal = preco.replace(",", ".").toDoubleOrNull() ?: 0.0
                     onToggle(checked, precoFinal)
                 },
                 colors = CheckboxDefaults.colors(
