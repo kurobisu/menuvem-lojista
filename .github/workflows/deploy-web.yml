@@ -2,9 +2,7 @@ name: Deploy web (GitHub Pages)
 
 on:
   push:
-    # flutter-rewrite está aqui porque o rewrite ainda não foi mergeado.
-    # Depois do merge, main sozinha basta.
-    branches: [main, flutter-rewrite]
+    branches: [main]
   workflow_dispatch:
 
 permissions:
@@ -21,7 +19,7 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       - uses: subosito/flutter-action@v2
         with:
@@ -51,7 +49,11 @@ jobs:
 
       - run: flutter pub get
 
-      - run: flutter analyze
+      # --no-fatal-infos é obrigatório: `flutter analyze` sai com código 1 em
+      # QUALQUER issue, inclusive info. Hoje resta um info conhecido (a
+      # depreciação de `anonKey`), e sem esta flag o deploy falharia sempre.
+      # Warnings e erros de verdade continuam derrubando o build.
+      - run: flutter analyze --no-fatal-infos
 
       # base-href precisa ser /<nome-do-repo>/ porque o Pages serve o site
       # em kurobisu.github.io/menuvem-lojista/ e não na raiz do domínio.

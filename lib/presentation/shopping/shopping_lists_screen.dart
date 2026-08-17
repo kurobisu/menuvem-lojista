@@ -44,7 +44,7 @@ class ShoppingListsScreen extends ConsumerWidget {
           return ListView.separated(
             padding: const EdgeInsets.fromLTRB(12, 8, 12, 80),
             itemCount: listas.length,
-            separatorBuilder: (_, __) => const SizedBox(height: 8),
+            separatorBuilder: (_, _) => const SizedBox(height: 8),
             itemBuilder: (context, i) => _ListaComprasItem(
               lista: listas[i],
               onTap: () => context.push('/shopping-lists/${listas[i].id}'),

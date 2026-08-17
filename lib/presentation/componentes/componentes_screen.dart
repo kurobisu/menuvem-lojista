@@ -113,7 +113,7 @@ class ComponentesScreen extends ConsumerWidget {
                 return ListView.separated(
                   padding: const EdgeInsets.fromLTRB(16, 4, 16, 88),
                   itemCount: filtrados.length,
-                  separatorBuilder: (_, __) => const SizedBox(height: 8),
+                  separatorBuilder: (_, _) => const SizedBox(height: 8),
                   itemBuilder: (context, i) {
                     final item = filtrados[i];
                     return Card(

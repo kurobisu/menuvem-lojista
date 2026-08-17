@@ -56,7 +56,7 @@ class PriceHistoryScreen extends ConsumerWidget {
           return ListView.separated(
             padding: const EdgeInsets.all(12),
             itemCount: itens.length + 1,
-            separatorBuilder: (_, __) => const SizedBox(height: 6),
+            separatorBuilder: (_, _) => const SizedBox(height: 6),
             itemBuilder: (context, i) {
               if (i == 0) {
                 return Padding(
