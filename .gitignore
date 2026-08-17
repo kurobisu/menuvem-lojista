@@ -5,6 +5,7 @@ app/build/
 
 # Config local com credenciais — NUNCA versionar
 local.properties
+lojista/lib/config/env.dart
 
 # IDE
 .idea/
