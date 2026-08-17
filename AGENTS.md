@@ -83,6 +83,7 @@ Other conventions:
    - **Verification lesson:** reloading the page with a session already in `localStorage` does *not* exercise this path — it passes with the bug present. Always clear storage and perform an actual login.
 2. **Locale.** `main()` must `await initializeDateFormatting('pt_BR')` before `runApp`, or any locale-aware `DateFormat` throws `LocaleDataException` at runtime.
 3. **Back navigation.** `context.go()` everywhere meant no screen had a back button — see the navigation convention above.
+4. **Switching accounts leaves the previous user's data on screen.** Riverpod keeps a `StreamProvider`'s last value cached for as long as something watches it, and the underlying Supabase `.stream()` subscription was opened under the old session — so after logout + login as another user, the old account's lists/insumos/produtos stay visible. `sessionResetProvider` (in `lib/providers/session_providers.dart`, kept alive by a `ref.watch` in `main.dart`) listens for a change of `session.user.id` and invalidates the five data repository providers; because every data provider watches one of those, the whole derived cache is dropped and the streams are rebuilt for the new user. It deliberately does **not** invalidate `authRepositoryProvider` or `supabaseClientProvider` — the router watches the auth one, and invalidating it would rebuild the whole `GoRouter` mid-transition. Any new data repository must be added to that invalidation list.
 
 ## Toolchain notes
 

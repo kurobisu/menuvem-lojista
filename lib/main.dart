@@ -5,6 +5,7 @@ import 'package:intl/intl.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'config/env.dart';
+import 'providers/session_providers.dart';
 import 'router/app_router.dart';
 import 'theme/app_theme.dart';
 
@@ -24,6 +25,8 @@ class MenuvemLojistaApp extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    // Mantém vivo o listener que limpa os dados em cache ao trocar de conta.
+    ref.watch(sessionResetProvider);
     final router = ref.watch(goRouterProvider);
     return MaterialApp.router(
       title: 'Menuvem Lojista',
