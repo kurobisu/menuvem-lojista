@@ -56,6 +56,7 @@ class HistoricoPrecoRepository {
     return row['id'] as int;
   }
 
+  /// Últimos [limite] preços de um insumo, do mais recente para o mais antigo.
   Future<List<HistoricoPreco>> getUltimosPrecos(
     int insumoId,
     int limite,
@@ -67,5 +68,32 @@ class HistoricoPrecoRepository {
         .order('data', ascending: false)
         .limit(limite);
     return rows.map(_historicoFromRow).toList();
+  }
+
+  /// Últimos [limitePorInsumo] preços de **todos** os insumos numa única query,
+  /// agrupados por `insumoId`. Cada lista vem do mais antigo para o mais
+  /// recente, pronta para `TendenciaPreco.calcular`.
+  ///
+  /// Existe para evitar o N+1 de chamar [getUltimosPrecos] em laço: a Home
+  /// recalcula tendências a cada emissão dos streams e uma ida ao servidor por
+  /// insumo travava a UI perceptivelmente na abertura do app.
+  Future<Map<int, List<HistoricoPreco>>> getUltimosPrecosPorInsumo(
+    int limitePorInsumo,
+  ) async {
+    final rows = await _client
+        .from(_table)
+        .select()
+        .order('data', ascending: false);
+
+    final porInsumo = <int, List<HistoricoPreco>>{};
+    for (final row in rows) {
+      final historico = _historicoFromRow(row);
+      final lista = porInsumo.putIfAbsent(historico.insumoId, () => []);
+      if (lista.length < limitePorInsumo) lista.add(historico);
+    }
+
+    return porInsumo.map(
+      (insumoId, lista) => MapEntry(insumoId, lista.reversed.toList()),
+    );
   }
 }

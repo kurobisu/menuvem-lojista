@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../domain/model/tendencia_preco.dart';
 import '../../domain/usecase/tendencia_usecase.dart';
 import '../../providers/repository_providers.dart';
 import '../../theme/app_theme.dart';
@@ -14,18 +15,21 @@ final priceHistoryProvider = StreamProvider<List<InsumoComTendencia>>((ref) {
   final insumoRepo = ref.watch(insumoRepositoryProvider);
   final historicoRepo = ref.watch(historicoPrecoRepositoryProvider);
   return insumoRepo.getAllInsumos().asyncMap((insumos) async {
-    final result = <InsumoComTendencia>[];
-    for (final insumo in insumos) {
-      try {
-        final tendencia = await getTendenciaPreco(historicoRepo, insumo.id);
-        result.add(InsumoComTendencia(
-          insumo: insumo,
-          tendencia: tendencia,
-          ultimoPreco: insumo.custoAtual,
-        ));
-      } catch (_) {}
+    // Uma query só, em vez de uma por insumo (ver getTendenciasPorInsumo).
+    var tendencias = <int, TendenciaPreco>{};
+    try {
+      tendencias = await getTendenciasPorInsumo(historicoRepo);
+    } catch (_) {
+      // sem histórico legível: segue com todos estáveis
     }
-    return result;
+    return [
+      for (final insumo in insumos)
+        InsumoComTendencia(
+          insumo: insumo,
+          tendencia: tendencias[insumo.id] ?? TendenciaPreco.estavel,
+          ultimoPreco: insumo.custoAtual,
+        ),
+    ];
   });
 });
 

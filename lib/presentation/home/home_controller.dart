@@ -59,21 +59,25 @@ final homeDataProvider = StreamProvider<HomeData>((ref) {
     (listas, insumos, produtos) => (listas, insumos, produtos),
   ).asyncMap((tuple) async {
     final (listas, insumos, produtos) = tuple;
-    final insumosComTendencia = <InsumoComTendencia>[];
-    for (final insumo in insumos) {
-      try {
-        final tendencia = await getTendenciaPreco(historicoRepo, insumo.id);
-        insumosComTendencia.add(
-          InsumoComTendencia(
-            insumo: insumo,
-            tendencia: tendencia,
-            ultimoPreco: insumo.custoAtual,
-          ),
-        );
-      } catch (_) {
-        // ignora insumo sem histórico legível, como no original
-      }
+
+    // Uma query só para todas as tendências. Antes era uma por insumo, em
+    // laço sequencial, re-executado a cada emissão dos três streams — o que
+    // travava a UI visivelmente na abertura do app.
+    var tendencias = <int, TendenciaPreco>{};
+    try {
+      tendencias = await getTendenciasPorInsumo(historicoRepo);
+    } catch (_) {
+      // sem histórico legível: segue com todos estáveis
     }
+
+    final insumosComTendencia = [
+      for (final insumo in insumos)
+        InsumoComTendencia(
+          insumo: insumo,
+          tendencia: tendencias[insumo.id] ?? TendenciaPreco.estavel,
+          ultimoPreco: insumo.custoAtual,
+        ),
+    ];
     return HomeData(
       ultimaLista: listas.isEmpty ? null : listas.first,
       todasListas: listas,

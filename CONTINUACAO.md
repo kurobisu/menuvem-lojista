@@ -19,14 +19,9 @@ Validado:
 - `flutter build windows` gera `build\windows\x64\runner\Release\lojista.exe`, que abre sem crash.
 - App testado rodando em `flutter run -d web-server` contra o **Supabase real de produção**: login, home com listas/tendências reais, biblioteca de insumos, e Produtos mostrando fichas técnicas de 15 insumos com custo e margem calculados corretamente. Os números batem com o que o app Kotlin produzia.
 
-**NÃO validado — próxima ação:**
-- **O APK Android nunca foi gerado nem testado no device.** O build Android depende do Gradle; no ambiente sandbox onde o agente roda, o Gradle falha com `java.io.IOException: Unable to establish loopback connection` (falha igual com e sem sandbox — é restrição do ambiente, não do projeto). **Isso precisa ser feito pelo dono**, no Android Studio ou num terminal normal:
+- **APK Android gerado e rodando no device** (Infinix X670, 17/08/2026): `flutter build apk --debug` + Run pelo Android Studio. App sobe, Supabase conecta, locale pt_BR detectado. As três plataformas (Android, Windows, web) estão validadas.
 
-```
-flutter build apk --debug
-```
-
-  ou direto no device: `flutter run -d <device>`. O `applicationId` continua `br.com.menuvem.lojista` (mesmo do app Kotlin), então o APK novo substitui o antigo no celular.
+**Atenção para agentes:** o build Android **não pode ser verificado pelo agente** — o Gradle falha com `java.io.IOException: Unable to establish loopback connection` no ambiente sandbox. Isso foi comprovado como limitação do ambiente e não do projeto: o projeto vizinho CofreNuvem, que builda normalmente na máquina do dono, falha com o **mesmo erro** quando rodado pelo agente. Portanto: mudanças que afetem o build Android precisam ser testadas pelo dono; `flutter analyze` e `flutter build windows` funcionam para o agente e cobrem boa parte.
 
 ## 3. Bugs encontrados no teste manual do dono (todos corrigidos)
 
