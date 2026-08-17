@@ -43,13 +43,17 @@ Detalhe completo desses três (e como não reintroduzir) na seção "Gotchas" do
 - Erro transitório conhecido do shell: `ChildProcess.kill` → simplesmente repetir o comando.
 - **Sem `gh` CLI instalado**; push funciona via credenciais Git já cacheadas no Windows. PR é criado manualmente pela URL que o `git push` imprime.
 
-## 5. Regras de segurança (inegociáveis)
+## 5. Conta de teste
+
+Existe uma conta de teste criada no roteiro E2E da época do Kotlin — o e-mail é `lojista@teste.com`. A senha está no histórico do git (commit `2c5d0c1` em diante), mas **não é repetida aqui de propósito**: o `AGENTS.md` avisa que o repo pode ser público. Se o login falhar, basta recriar pelo botão "Cadastre-se". Considere trocar essa senha caso o repositório seja público.
+
+## 6. Regras de segurança (inegociáveis)
 
 - `lib/config/env.dart` (URL + anon key do Supabase) **nunca** commitar — já está no `.gitignore`. O template versionado é `lib/config/env.example.dart`.
 - **Secret key (`sb_secret_...`) nunca** no repo nem no app — só a anon key no cliente. (Recomendado ao dono: rotacionar a secret e deixar o repo privado no GitHub.)
 - Commit/push só quando o dono pedir.
 
-## 6. Próximos passos sugeridos
+## 7. Próximos passos sugeridos
 
 1. **Gerar e testar o APK no device** (bloqueador — ver seção 2). Rodar o roteiro E2E: login → criar lista → adicionar insumo → finalizar compra → conferir que o custo do produto recalculou.
 2. Mergear o PR `flutter-rewrite` → `main` depois que o APK estiver validado.

@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 
+import '../../config/app_version.dart';
 import '../../domain/model/lista_compras.dart';
 import '../../domain/model/produto_com_custo.dart';
 import '../../domain/model/tendencia_preco.dart';
@@ -45,11 +46,26 @@ class HomeScreen extends ConsumerWidget {
                         Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text(
-                              'Menuvem',
-                              style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                                    color: Colors.white.withValues(alpha: 0.8),
-                                  ),
+                            Row(
+                              mainAxisSize: MainAxisSize.min,
+                              crossAxisAlignment: CrossAxisAlignment.baseline,
+                              textBaseline: TextBaseline.alphabetic,
+                              children: [
+                                Text(
+                                  'Menuvem',
+                                  style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                                        color: Colors.white.withValues(alpha: 0.8),
+                                      ),
+                                ),
+                                const SizedBox(width: 6),
+                                Text(
+                                  appVersionLabel,
+                                  style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                                        color: Colors.white.withValues(alpha: 0.6),
+                                        fontSize: 10,
+                                      ),
+                                ),
+                              ],
                             ),
                             Text(
                               'Lojista',
