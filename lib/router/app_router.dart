@@ -47,7 +47,11 @@ final goRouterProvider = Provider<GoRouter>((ref) {
       final authenticated =
           ref.read(authRepositoryProvider).currentSession != null;
       final onLogin = state.matchedLocation == '/login';
-      if (!authenticated && !onLogin) return '/login';
+      // /trocar-conta é a mesma tela de login, mas alcançável **com** sessão
+      // ativa: trocar de conta não passa por logout, justamente para não
+      // revogar o refresh token da conta atual (ver AGENTS.md).
+      final onTrocaConta = state.matchedLocation == '/trocar-conta';
+      if (!authenticated && !onLogin && !onTrocaConta) return '/login';
       if (authenticated && onLogin) return '/home';
       return null;
     },
@@ -56,6 +60,10 @@ final goRouterProvider = Provider<GoRouter>((ref) {
     ),
     routes: [
       GoRoute(path: '/login', builder: (context, state) => const LoginScreen()),
+      GoRoute(
+        path: '/trocar-conta',
+        builder: (context, state) => const LoginScreen(modoTroca: true),
+      ),
       GoRoute(path: '/home', builder: (context, state) => const HomeScreen()),
       GoRoute(
         path: '/shopping-lists',

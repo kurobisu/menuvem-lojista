@@ -25,8 +25,10 @@ class MenuvemLojistaApp extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    // Mantém vivo o listener que limpa os dados em cache ao trocar de conta.
+    // Mantém vivos os listeners de sessão: limpar o cache ao trocar de conta
+    // e acompanhar a rotação do refresh token das contas salvas.
     ref.watch(sessionResetProvider);
+    ref.watch(tokenSyncProvider);
     final router = ref.watch(goRouterProvider);
     return MaterialApp.router(
       title: 'Menuvem Lojista',

@@ -84,6 +84,12 @@ class HomeScreen extends ConsumerWidget {
                               tooltip: 'Histórico de preços',
                             ),
                             IconButton(
+                              onPressed: () => context.push('/trocar-conta'),
+                              icon: const Icon(Icons.switch_account,
+                                  color: Colors.white),
+                              tooltip: 'Trocar de conta',
+                            ),
+                            IconButton(
                               onPressed: () =>
                                   ref.read(authRepositoryProvider).signOut(),
                               icon: const Icon(Icons.exit_to_app, color: Colors.white),

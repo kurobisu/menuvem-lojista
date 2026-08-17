@@ -3,6 +3,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../data/auth_repository.dart';
 import '../data/componente_repository.dart';
+import '../data/contas_salvas_repository.dart';
 import '../data/historico_preco_repository.dart';
 import '../data/insumo_repository.dart';
 import '../data/lista_compras_repository.dart';
@@ -14,6 +15,12 @@ final supabaseClientProvider = Provider<SupabaseClient>((ref) {
 
 final authRepositoryProvider = Provider<AuthRepository>((ref) {
   return AuthRepository(ref.watch(supabaseClientProvider));
+});
+
+/// Contas do login rápido. Não guarda dados do usuário logado, então fica
+/// de fora da invalidação do [sessionResetProvider].
+final contasSalvasRepositoryProvider = Provider<ContasSalvasRepository>((ref) {
+  return ContasSalvasRepository();
 });
 
 final insumoRepositoryProvider = Provider<InsumoRepository>((ref) {

@@ -85,6 +85,16 @@ Other conventions:
 3. **Back navigation.** `context.go()` everywhere meant no screen had a back button — see the navigation convention above.
 4. **Switching accounts leaves the previous user's data on screen.** Riverpod keeps a `StreamProvider`'s last value cached for as long as something watches it, and the underlying Supabase `.stream()` subscription was opened under the old session — so after logout + login as another user, the old account's lists/insumos/produtos stay visible. `sessionResetProvider` (in `lib/providers/session_providers.dart`, kept alive by a `ref.watch` in `main.dart`) listens for a change of `session.user.id` and invalidates the five data repository providers; because every data provider watches one of those, the whole derived cache is dropped and the streams are rebuilt for the new user. It deliberately does **not** invalidate `authRepositoryProvider` or `supabaseClientProvider` — the router watches the auth one, and invalidating it would rebuild the whole `GoRouter` mid-transition. Any new data repository must be added to that invalidation list.
 
+## Login rápido (contas salvas)
+
+Marcar "Salvar dados de login" grava a conta em `SharedPreferences` (`ContasSalvasRepository`) e ela vira um avatar na tela de login; um toque entra direto. Pontos que não são óbvios:
+
+- **Grava o refresh token, nunca a senha.** Decisão consciente do dono: o token dá o mesmo login de um toque, pode ser revogado pelo painel do Supabase e, se o arquivo vazar, não expõe uma senha provavelmente reusada em outros serviços. (O projeto CofreNuvem guarda a senha em base64, que é reversível — não replicar isso aqui.)
+- **`signOut()` usa `SignOutScope.local`, e isso é obrigatório.** O padrão do Supabase é `global`, que revoga os refresh tokens no servidor — e aí o token recém-salvo morre exatamente no fluxo em que o recurso é usado (sair e entrar em outra conta). Voltar para o escopo padrão quebra o login rápido de forma silenciosa: o avatar aparece, mas sempre cai no "sessão expirada".
+- **O token é rotacionado a cada renovação de sessão**, então `tokenSyncProvider` escuta `tokenRefreshed`/`signedIn` e regrava o token da conta salva. Sem isso o token guardado envelhece sozinho depois de algumas horas.
+- Validade do refresh token é ajuste de **servidor** (painel do Supabase → Authentication → Sessions), não de código. Por padrão não expira por tempo.
+- Quando `setSession` falha (token revogado/expirado), a tela preenche o e-mail e pede a senha; a conta continua salva e o próximo login normal renova o token.
+
 ## Toolchain notes
 
 - **The Windows username on this machine is `Usuário` — with an accent — and that breaks Gradle.** Two mitigations are in place and must not be removed:

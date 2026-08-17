@@ -1,4 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'repository_providers.dart';
 
@@ -38,6 +39,34 @@ final sessionResetProvider = Provider<void>((ref) {
     ref.invalidate(componenteRepositoryProvider);
     ref.invalidate(listaComprasRepositoryProvider);
     ref.invalidate(historicoPrecoRepositoryProvider);
+  });
+
+  ref.onDispose(subscription.cancel);
+});
+
+/// Mantém atualizado o refresh token das contas salvas.
+///
+/// O Supabase **rotaciona** o refresh token: toda renovação de sessão emite um
+/// token novo e invalida o anterior. Sem sincronizar, o token gravado no
+/// login rápido envelheceria sozinho e o avatar daquela conta pararia de
+/// funcionar depois de algumas horas de uso.
+///
+/// Só atualiza contas que o usuário já escolheu salvar — não cria entradas
+/// novas, porque salvar é uma decisão explícita dele na tela de login.
+final tokenSyncProvider = Provider<void>((ref) {
+  final authRepository = ref.watch(authRepositoryProvider);
+  final contasSalvas = ref.watch(contasSalvasRepositoryProvider);
+
+  final subscription = authRepository.authStateChanges.listen((estado) {
+    final relevante = estado.event == AuthChangeEvent.tokenRefreshed ||
+        estado.event == AuthChangeEvent.signedIn;
+    if (!relevante) return;
+
+    final email = estado.session?.user.email;
+    final token = estado.session?.refreshToken;
+    if (email == null || token == null) return;
+
+    contasSalvas.atualizarToken(email, token);
   });
 
   ref.onDispose(subscription.cancel);

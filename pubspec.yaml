@@ -42,6 +42,9 @@ dependencies:
   intl: ^0.20.3
   rxdart: ^0.28.0
   collection: ^1.19.1
+  # Guarda a lista de contas salvas do login rápido. Mesma versão usada no
+  # projeto CofreNuvem, que builda nesta máquina — ver AGENTS.md.
+  shared_preferences: ^2.5.5
 
 dev_dependencies:
   flutter_test:
