@@ -1,0 +1,76 @@
+name: Deploy web (GitHub Pages)
+
+on:
+  push:
+    # flutter-rewrite está aqui porque o rewrite ainda não foi mergeado.
+    # Depois do merge, main sozinha basta.
+    branches: [main, flutter-rewrite]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# Uma publicação por vez; se empurrar dois commits seguidos, o segundo vence.
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: subosito/flutter-action@v2
+        with:
+          # Mesma versão usada no desenvolvimento (ver AGENTS.md).
+          flutter-version: '3.44.9'
+          channel: stable
+          cache: true
+
+      - name: Gera lib/config/env.dart a partir dos secrets
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
+        run: |
+          if [ -z "$SUPABASE_URL" ] || [ -z "$SUPABASE_ANON_KEY" ]; then
+            echo "::error::Faltam os secrets SUPABASE_URL e/ou SUPABASE_ANON_KEY."
+            echo "::error::Cadastre em Settings > Secrets and variables > Actions."
+            exit 1
+          fi
+          mkdir -p lib/config
+          cat > lib/config/env.dart <<EOF
+          // GERADO PELO CI — não commitar. Ver .github/workflows/deploy-web.yml
+          class Env {
+            static const supabaseUrl = '$SUPABASE_URL';
+            static const supabaseAnonKey = '$SUPABASE_ANON_KEY';
+          }
+          EOF
+
+      - run: flutter pub get
+
+      - run: flutter analyze
+
+      # base-href precisa ser /<nome-do-repo>/ porque o Pages serve o site
+      # em kurobisu.github.io/menuvem-lojista/ e não na raiz do domínio.
+      - name: Build web
+        run: flutter build web --release --base-href /menuvem-lojista/
+
+      # Impede o Jekyll do Pages de engolir arquivos/pastas iniciados por "_".
+      - run: touch build/web/.nojekyll
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: build/web
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4
