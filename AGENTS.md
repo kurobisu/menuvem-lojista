@@ -76,7 +76,11 @@ Other conventions:
 
 ## Gotchas already hit and fixed — don't reintroduce
 
-1. **Auth redirect race.** Don't read the auth session through a Riverpod `StreamProvider` inside go_router's `redirect`. go_router's `refreshListenable` and the StreamProvider both subscribe to the same Supabase auth stream; the redirect can run before Riverpod's cached value updates, leaving the user stuck on the login screen after a *successful* login (button animates, nothing happens, no error). `isAuthenticatedProvider` reads `currentSession` synchronously from the SDK for exactly this reason.
+1. **Auth in go_router's `redirect` — read the session live, never through a Riverpod provider.** This bug was introduced, "fixed" wrong, and only then fixed properly; both wrong versions produce the *same* symptom: the Entrar button animates, no error appears, and the user stays on the login screen even though Supabase authenticated fine.
+   - First wrong version: a `StreamProvider` over `onAuthStateChange`. go_router's `refreshListenable` and the StreamProvider both subscribe to that same stream, and the redirect could run before Riverpod's cached value updated.
+   - Second wrong version: a plain `Provider<bool>` reading `currentSession`. Worse — its only dependency (`authRepositoryProvider`) is never invalidated, so Riverpod caches the very first result (`false`, at startup) **forever** and the redirect never sees any later login.
+   - Correct version (current): `redirect` calls `ref.read(authRepositoryProvider).currentSession != null` directly. `currentSession` is a live getter on the Supabase client, so there is nothing to go stale.
+   - **Verification lesson:** reloading the page with a session already in `localStorage` does *not* exercise this path — it passes with the bug present. Always clear storage and perform an actual login.
 2. **Locale.** `main()` must `await initializeDateFormatting('pt_BR')` before `runApp`, or any locale-aware `DateFormat` throws `LocaleDataException` at runtime.
 3. **Back navigation.** `context.go()` everywhere meant no screen had a back button — see the navigation convention above.
 

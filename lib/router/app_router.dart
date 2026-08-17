@@ -15,7 +15,6 @@ import '../presentation/products/produto_detail_screen.dart';
 import '../presentation/products/produtos_screen.dart';
 import '../presentation/shopping/shopping_list_screen.dart';
 import '../presentation/shopping/shopping_lists_screen.dart';
-import '../providers/auth_providers.dart' show isAuthenticatedProvider;
 import '../providers/repository_providers.dart' show authRepositoryProvider;
 
 class _GoRouterRefreshStream extends ChangeNotifier {
@@ -36,7 +35,17 @@ final goRouterProvider = Provider<GoRouter>((ref) {
   return GoRouter(
     initialLocation: '/home',
     redirect: (context, state) {
-      final authenticated = ref.read(isAuthenticatedProvider);
+      // Lê a sessão direto do SDK, e NÃO através de um Provider<bool>.
+      //
+      // Um Provider<bool> aqui é uma armadilha: ele só depende de
+      // authRepositoryProvider, que nunca é invalidado, então o Riverpod
+      // cacheia o primeiro valor calculado (false, na abertura do app) e
+      // devolve esse mesmo false para sempre — o login funciona, mas o
+      // redirect nunca enxerga a sessão nova e o usuário fica preso na tela
+      // de login. currentSession é um getter vivo do cliente Supabase e
+      // sempre reflete o estado atual.
+      final authenticated =
+          ref.read(authRepositoryProvider).currentSession != null;
       final onLogin = state.matchedLocation == '/login';
       if (!authenticated && !onLogin) return '/login';
       if (authenticated && onLogin) return '/home';
