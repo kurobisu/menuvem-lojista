@@ -45,6 +45,17 @@ Dashboard & sales:
 - Android APK: `flutter build apk --debug`
 - Windows desktop: `flutter build windows` → `build\windows\x64\runner\Release\lojista.exe`
 - Quick UI check in a browser: `flutter run -d web-server --web-port=8765`
+- Web build as CI does it: `flutter build web --release --base-href /menuvem-lojista/`
+
+## Deploy web (GitHub Pages)
+
+`.github/workflows/deploy-web.yml` publishes the web build to GitHub Pages on every push to `main` or `flutter-rewrite` (the second only until the rewrite is merged), and via manual `workflow_dispatch`. Pages is configured with "GitHub Actions" as the source. Live at `https://kurobisu.github.io/menuvem-lojista/`.
+
+- **`lib/config/env.dart` is generated in CI** from the repository secrets `SUPABASE_URL` and `SUPABASE_ANON_KEY` (Settings → Secrets and variables → Actions). The workflow fails with an explicit message if either is missing, instead of shipping a broken site. The file stays gitignored — it is never committed, in CI or locally.
+- **The anon key is visible in the published JS bundle**, and that is expected: Supabase anon keys are client-side by design and RLS is what actually protects the data. Using secrets keeps the key out of git, not out of the browser. Never put the `sb_secret_...` key anywhere near this.
+- **`--base-href /menuvem-lojista/` is required** — Pages serves the site from a repo subpath, not the domain root. Change it if the repository is ever renamed.
+- Routing works on Pages without any 404/rewrite trick because the app uses Flutter's default **hash** URL strategy (`#/home`). If anyone ever calls `usePathUrlStrategy()`, deep links will start 404-ing there and a `404.html` copy of `index.html` becomes necessary.
+- The repo is **public**. `senha123` for the `lojista@teste.com` test account is in git history (commit `2c5d0c1` onward) and is therefore public — rotate that password in the Supabase dashboard.
 - **No meaningful tests exist.** `test/widget_test.dart` is a placeholder — real screen tests need a fake Supabase client that doesn't exist yet.
 
 ## Architecture
