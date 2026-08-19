@@ -96,7 +96,7 @@ class ComponenteRepository {
     return _client
         .from(_tableComponentes)
         .stream(primaryKey: ['id'])
-        .order('ordem')
+        .order('ordem', ascending: true)
         .map(
           (rows) => _dedupePorId(
             rows.map(componenteFromRow).toList(),
@@ -153,7 +153,7 @@ class ComponenteRepository {
     return _client
         .from(_tableTamanhos)
         .stream(primaryKey: ['id'])
-        .order('ordem')
+        .order('ordem', ascending: true)
         .map(
           (rows) => _dedupePorId(
             rows.map(_tamanhoComponenteFromRow).toList(),
@@ -167,7 +167,7 @@ class ComponenteRepository {
         .from(_tableTamanhos)
         .stream(primaryKey: ['id'])
         .eq('componente_id', componenteId)
-        .order('ordem')
+        .order('ordem', ascending: true)
         .map(
           (rows) => _dedupePorId(
             rows.map(_tamanhoComponenteFromRow).toList(),
@@ -183,7 +183,7 @@ class ComponenteRepository {
         .from(_tableTamanhos)
         .select()
         .eq('componente_id', componenteId)
-        .order('ordem');
+        .order('ordem', ascending: true);
     return rows.map(_tamanhoComponenteFromRow).toList();
   }
 
@@ -301,7 +301,7 @@ class ComponenteRepository {
     return _client
         .from(_tableTipos)
         .stream(primaryKey: ['id'])
-        .order('ordem')
+        .order('ordem', ascending: true)
         .map((rows) => rows.map(_tipoComponenteFromRow).toList());
   }
 

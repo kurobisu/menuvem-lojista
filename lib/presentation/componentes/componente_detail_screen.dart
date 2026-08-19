@@ -448,9 +448,17 @@ class _TamanhosBar extends ConsumerStatefulWidget {
 
 class _TamanhosBarState extends ConsumerState<_TamanhosBar> {
   List<TamanhoComponente>? _local;
+  // True do início do arrasto até o UPDATE terminar (sucesso ou erro).
+  // Sem isso, o próprio `setState` do arrasto otimista já dispara um
+  // rebuild antes da resposta do servidor chegar, e o build() reconstruía
+  // `_local` a partir do `widget.tamanhos` (ainda na ordem antiga, vinda do
+  // stream) -- a barra "voltava" pra ordem de antes na hora, e só a query
+  // direto no banco mostrava que o UPDATE tinha ido. Mesma técnica de
+  // `_hasChanges` em tipos_reorder_screen.dart.
+  bool _salvando = false;
   // ids na ordem recém-salva: o stream demora um instante pra reemitir
   // depois do UPDATE -- sem isso a barra "voltava" pra ordem antiga por um
-  // instante. Mesma técnica de tipos_reorder_screen.dart.
+  // instante assim que `_salvando` virasse false.
   List<int>? _pendingSavedIds;
 
   Future<void> _reordenar(int oldIndex, int newIndex) async {
@@ -458,7 +466,10 @@ class _TamanhosBarState extends ConsumerState<_TamanhosBar> {
     final novaLista = List.of(lista);
     final item = novaLista.removeAt(oldIndex);
     novaLista.insert(newIndex, item);
-    setState(() => _local = novaLista);
+    setState(() {
+      _local = novaLista;
+      _salvando = true;
+    });
 
     final ordemPorId = {
       for (var i = 0; i < novaLista.length; i++) novaLista[i].id: i,
@@ -468,14 +479,16 @@ class _TamanhosBarState extends ConsumerState<_TamanhosBar> {
           .read(componenteRepositoryProvider)
           .updateOrdensTamanhos(ordemPorId);
       if (!mounted) return;
-      // Se outro arrasto começou enquanto este salvava, `_local` já mudou de
-      // novo -- não sobrescreve `_pendingSavedIds` com uma ordem que já não
-      // é a atual, ou a barra podia "confirmar" a ordem errada.
-      if (!identical(_local, novaLista)) return;
-      setState(() => _pendingSavedIds = novaLista.map((t) => t.id).toList());
+      setState(() {
+        _salvando = false;
+        _pendingSavedIds = novaLista.map((t) => t.id).toList();
+      });
     } catch (e) {
       if (!mounted) return;
-      setState(() => _local = null);
+      setState(() {
+        _salvando = false;
+        _local = null;
+      });
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Não foi possível salvar a ordem: $e')),
       );
@@ -502,7 +515,7 @@ class _TamanhosBarState extends ConsumerState<_TamanhosBar> {
           currentIds.length != _pendingSavedIds!.length;
       if (confirmado) _pendingSavedIds = null;
     }
-    if (_pendingSavedIds == null) {
+    if (_pendingSavedIds == null && !_salvando) {
       _local = List.of(widget.tamanhos);
     }
     final lista = _local!;

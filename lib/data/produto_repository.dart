@@ -146,7 +146,7 @@ class ProdutoRepository {
         .from(_tablePorcoes)
         .stream(primaryKey: ['id'])
         .eq('produto_id', produtoId)
-        .order('ordem')
+        .order('ordem', ascending: true)
         .map(
           (rows) => _dedupePorId(rows.map(porcaoFromRow).toList(), (p) => p.id),
         );
@@ -156,7 +156,7 @@ class ProdutoRepository {
     return _client
         .from(_tablePorcoes)
         .stream(primaryKey: ['id'])
-        .order('ordem')
+        .order('ordem', ascending: true)
         .map(
           (rows) => _dedupePorId(rows.map(porcaoFromRow).toList(), (p) => p.id),
         );
@@ -167,7 +167,7 @@ class ProdutoRepository {
         .from(_tablePorcoes)
         .select()
         .eq('produto_id', produtoId)
-        .order('ordem');
+        .order('ordem', ascending: true);
     return rows.map(porcaoFromRow).toList();
   }
 

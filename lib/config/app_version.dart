@@ -8,7 +8,7 @@
 /// automaticamente por um agente. O custo dessa escolha é ter que atualizar
 /// os dois lugares ao subir a versão.
 const String appVersion = '1.4.0';
-const String appBuildNumber = '6';
+const String appBuildNumber = '7';
 
 /// Rótulo curto usado na UI, ex.: `v1.1.0 (2)`.
 const String appVersionLabel = 'v$appVersion ($appBuildNumber)';

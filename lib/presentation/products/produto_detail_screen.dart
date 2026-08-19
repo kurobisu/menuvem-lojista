@@ -1,3 +1,4 @@
+import 'package:collection/collection.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -9,6 +10,7 @@ import '../../domain/model/porcao.dart';
 import '../../domain/model/porcao_com_custo.dart';
 import '../../domain/model/produto.dart';
 import '../../domain/model/produto_componente_completo.dart';
+import '../../providers/repository_providers.dart';
 import '../../theme/app_theme.dart';
 import '../components/back_or_home_button.dart';
 import '../components/confirm_dialog.dart';
@@ -568,8 +570,13 @@ class _CorpoPorcao extends ConsumerWidget {
 }
 
 /// Seletor de porções. Com uma porção só, vira um convite discreto a criar
-/// tamanhos — quem vende produto de tamanho único não vê complexidade.
-class _PorcoesBar extends StatelessWidget {
+/// tamanhos — quem vende produto de tamanho único não vê complexidade. Com
+/// mais de uma, os chips viram arrastáveis (segurar e arrastar) pra deixar
+/// na ordem que o usuário preferir. Mesmo padrão de `_TamanhosBar` em
+/// componente_detail_screen.dart -- ver a nota lá (gotcha #9 no AGENTS.md)
+/// sobre o `_salvando` ser necessário pra não voltar pra ordem antiga antes
+/// do servidor confirmar.
+class _PorcoesBar extends ConsumerStatefulWidget {
   const _PorcoesBar({
     super.key,
     required this.porcoes,
@@ -584,36 +591,106 @@ class _PorcoesBar extends StatelessWidget {
   final VoidCallback onAdicionar;
 
   @override
+  ConsumerState<_PorcoesBar> createState() => _PorcoesBarState();
+}
+
+class _PorcoesBarState extends ConsumerState<_PorcoesBar> {
+  List<Porcao>? _local;
+  bool _salvando = false;
+  List<int>? _pendingSavedIds;
+
+  Future<void> _reordenar(int oldIndex, int newIndex) async {
+    final lista = _local ?? widget.porcoes;
+    final novaLista = List.of(lista);
+    final item = novaLista.removeAt(oldIndex);
+    novaLista.insert(newIndex, item);
+    setState(() {
+      _local = novaLista;
+      _salvando = true;
+    });
+
+    final ordemPorId = {
+      for (var i = 0; i < novaLista.length; i++) novaLista[i].id: i,
+    };
+    try {
+      await ref.read(produtoRepositoryProvider).updateOrdensPorcoes(ordemPorId);
+      if (!mounted) return;
+      setState(() {
+        _salvando = false;
+        _pendingSavedIds = novaLista.map((p) => p.id).toList();
+      });
+    } catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _salvando = false;
+        _local = null;
+      });
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Não foi possível salvar a ordem: $e')),
+      );
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
-    if (porcoes.length <= 1) {
+    if (widget.porcoes.length <= 1) {
       return Align(
         alignment: Alignment.centerLeft,
         child: TextButton.icon(
-          onPressed: onAdicionar,
+          onPressed: widget.onAdicionar,
           icon: const Icon(Icons.straighten, size: 16),
           label: const Text('Adicionar tamanho (P/M/G)'),
         ),
       );
     }
-    return SingleChildScrollView(
-      scrollDirection: Axis.horizontal,
-      child: Row(
-        children: [
-          for (final porcao in porcoes) ...[
-            ChoiceChip(
-              label: Text(porcao.nome),
-              selected: porcao.id == porcaoAtualId,
-              onSelected: (_) => onSelecionar(porcao.id),
+
+    if (_pendingSavedIds != null) {
+      final currentIds = widget.porcoes.map((p) => p.id).toList();
+      final confirmado =
+          const ListEquality<int>().equals(currentIds, _pendingSavedIds) ||
+          currentIds.length != _pendingSavedIds!.length;
+      if (confirmado) _pendingSavedIds = null;
+    }
+    if (_pendingSavedIds == null && !_salvando) {
+      _local = List.of(widget.porcoes);
+    }
+    final lista = _local!;
+
+    return Row(
+      children: [
+        Expanded(
+          child: SizedBox(
+            height: 40,
+            child: ReorderableListView.builder(
+              scrollDirection: Axis.horizontal,
+              buildDefaultDragHandles: false,
+              itemCount: lista.length,
+              onReorderItem: (oldIndex, newIndex) =>
+                  _reordenar(oldIndex, newIndex),
+              itemBuilder: (context, index) {
+                final porcao = lista[index];
+                return ReorderableDelayedDragStartListener(
+                  key: ValueKey(porcao.id),
+                  index: index,
+                  child: Padding(
+                    padding: const EdgeInsets.only(right: 8),
+                    child: ChoiceChip(
+                      label: Text(porcao.nome),
+                      selected: porcao.id == widget.porcaoAtualId,
+                      onSelected: (_) => widget.onSelecionar(porcao.id),
+                    ),
+                  ),
+                );
+              },
             ),
-            const SizedBox(width: 8),
-          ],
-          ActionChip(
-            avatar: const Icon(Icons.add, size: 16),
-            label: const Text('Tamanho'),
-            onPressed: onAdicionar,
           ),
-        ],
-      ),
+        ),
+        ActionChip(
+          avatar: const Icon(Icons.add, size: 16),
+          label: const Text('Tamanho'),
+          onPressed: widget.onAdicionar,
+        ),
+      ],
     );
   }
 }
