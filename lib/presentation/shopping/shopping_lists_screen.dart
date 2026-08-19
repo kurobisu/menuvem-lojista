@@ -7,8 +7,10 @@ import '../../domain/model/lista_compras.dart';
 import '../../domain/usecase/lista_compras_usecases.dart' as usecase;
 import '../../providers/repository_providers.dart';
 import '../../theme/app_theme.dart';
+import '../components/back_or_home_button.dart';
 import '../components/empty_state.dart';
 import '../components/formatters.dart';
+import '../components/responsive.dart';
 
 final listasComprasStreamProvider = StreamProvider<List<ListaCompras>>((ref) {
   return ref.watch(listaComprasRepositoryProvider).getAllListas();
@@ -22,7 +24,10 @@ class ShoppingListsScreen extends ConsumerWidget {
     final listasAsync = ref.watch(listasComprasStreamProvider);
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Minhas Listas')),
+      appBar: AppBar(
+        leading: const BackOrHomeButton(),
+        title: const Text('Minhas Listas'),
+      ),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () => _showCreateDialog(context, ref),
         backgroundColor: yellowSecondary,
@@ -30,27 +35,32 @@ class ShoppingListsScreen extends ConsumerWidget {
         icon: const Icon(Icons.add),
         label: const Text('Nova Lista'),
       ),
-      body: listasAsync.when(
-        loading: () => const Center(child: CircularProgressIndicator(color: purplePrimary)),
-        error: (e, _) => Center(child: Text('Erro: $e')),
-        data: (listas) {
-          if (listas.isEmpty) {
-            return const EmptyState(
-              icon: Icons.list_outlined,
-              title: 'Nenhuma lista criada',
-              subtitle: 'Crie sua primeira lista para começar a registrar compras',
+      body: MaxWidthCenter(
+        child: listasAsync.when(
+          loading: () => const Center(
+            child: CircularProgressIndicator(color: purplePrimary),
+          ),
+          error: (e, _) => Center(child: Text('Erro: $e')),
+          data: (listas) {
+            if (listas.isEmpty) {
+              return const EmptyState(
+                icon: Icons.list_outlined,
+                title: 'Nenhuma lista criada',
+                subtitle:
+                    'Crie sua primeira lista para começar a registrar compras',
+              );
+            }
+            return ListView.separated(
+              padding: const EdgeInsets.fromLTRB(12, 8, 12, 80),
+              itemCount: listas.length,
+              separatorBuilder: (_, _) => const SizedBox(height: 8),
+              itemBuilder: (context, i) => _ListaComprasItem(
+                lista: listas[i],
+                onTap: () => context.push('/shopping-lists/${listas[i].id}'),
+              ),
             );
-          }
-          return ListView.separated(
-            padding: const EdgeInsets.fromLTRB(12, 8, 12, 80),
-            itemCount: listas.length,
-            separatorBuilder: (_, _) => const SizedBox(height: 8),
-            itemBuilder: (context, i) => _ListaComprasItem(
-              lista: listas[i],
-              onTap: () => context.push('/shopping-lists/${listas[i].id}'),
-            ),
-          );
-        },
+          },
+        ),
       ),
     );
   }
@@ -137,16 +147,15 @@ class _ListaComprasItem extends StatelessWidget {
                       lista.nome,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-                      style: Theme.of(context)
-                          .textTheme
-                          .titleSmall
-                          ?.copyWith(fontWeight: FontWeight.w600),
+                      style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                        fontWeight: FontWeight.w600,
+                      ),
                     ),
                     Text(
                       formatter.format(lista.dataCriacao),
                       style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                            color: Theme.of(context).colorScheme.onSurfaceVariant,
-                          ),
+                        color: Theme.of(context).colorScheme.onSurfaceVariant,
+                      ),
                     ),
                   ],
                 ),
@@ -158,20 +167,25 @@ class _ListaComprasItem extends StatelessWidget {
                     Text(
                       'R\$ ${formatarMoeda(lista.totalGasto)}',
                       style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                            fontWeight: FontWeight.bold,
-                            color: cor,
-                          ),
+                        fontWeight: FontWeight.bold,
+                        color: cor,
+                      ),
                     ),
                   const SizedBox(height: 2),
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 6,
+                      vertical: 2,
+                    ),
                     decoration: BoxDecoration(
                       color: cor.withValues(alpha: isFinalized ? 0.12 : 0.10),
                       borderRadius: BorderRadius.circular(4),
                     ),
                     child: Text(
                       isFinalized ? 'Finalizada' : 'Aberta',
-                      style: Theme.of(context).textTheme.labelSmall?.copyWith(color: cor),
+                      style: Theme.of(
+                        context,
+                      ).textTheme.labelSmall?.copyWith(color: cor),
                     ),
                   ),
                 ],
@@ -179,7 +193,9 @@ class _ListaComprasItem extends StatelessWidget {
               const SizedBox(width: 8),
               Icon(
                 Icons.chevron_right,
-                color: Theme.of(context).colorScheme.onSurfaceVariant.withValues(alpha: 0.5),
+                color: Theme.of(
+                  context,
+                ).colorScheme.onSurfaceVariant.withValues(alpha: 0.5),
               ),
             ],
           ),

@@ -16,7 +16,11 @@ class ShoppingListData {
   final List<ItemLista> itens;
   final Map<int, TendenciaPreco> tendencias;
 
-  const ShoppingListData({this.lista, required this.itens, required this.tendencias});
+  const ShoppingListData({
+    this.lista,
+    required this.itens,
+    required this.tendencias,
+  });
 
   double get totalGasto =>
       itens.where((i) => i.comprado).fold(0.0, (s, i) => s + i.precoTotal);
@@ -24,8 +28,10 @@ class ShoppingListData {
   int get totalItens => itens.length;
 }
 
-final shoppingListDataProvider =
-    StreamProvider.family<ShoppingListData, int>((ref, listaId) {
+final shoppingListDataProvider = StreamProvider.family<ShoppingListData, int>((
+  ref,
+  listaId,
+) {
   final listaRepo = ref.watch(listaComprasRepositoryProvider);
   final historicoRepo = ref.watch(historicoPrecoRepositoryProvider);
 
@@ -48,14 +54,14 @@ final shoppingListDataProvider =
   });
 });
 
-final insumoSearchProvider =
-    StreamProvider.autoDispose.family<List<Insumo>, String>((ref, query) {
-  if (query.trim().isEmpty) return Stream.value(const []);
-  return ref
-      .watch(insumoRepositoryProvider)
-      .searchInsumos(query)
-      .debounceTime(const Duration(milliseconds: 300));
-});
+final insumoSearchProvider = StreamProvider.autoDispose
+    .family<List<Insumo>, String>((ref, query) {
+      if (query.trim().isEmpty) return Stream.value(const []);
+      return ref
+          .watch(insumoRepositoryProvider)
+          .searchInsumos(query)
+          .debounceTime(const Duration(milliseconds: 300));
+    });
 
 class ShoppingListActions {
   ShoppingListActions(this.ref, this.listaId);
@@ -100,7 +106,9 @@ class ShoppingListActions {
   }
 }
 
-final shoppingListActionsProvider =
-    Provider.family<ShoppingListActions, int>((ref, listaId) {
+final shoppingListActionsProvider = Provider.family<ShoppingListActions, int>((
+  ref,
+  listaId,
+) {
   return ShoppingListActions(ref, listaId);
 });

@@ -64,7 +64,10 @@ Future<void> finalizarCompra(
           listaComprasNome: lista.nome,
         ),
       );
-      await insumoRepository.updateCustoInsumo(item.insumoId!, item.precoUnitario);
+      await insumoRepository.updateCustoInsumo(
+        item.insumoId!,
+        item.precoUnitario,
+      );
     }
   }
 

@@ -49,3 +49,6 @@ lib/config/env.dart
 
 # Artefatos de crash/heap dump
 *.hprof
+
+# Lock de runtime do Claude Code — específico da máquina/sessão
+.claude/scheduled_tasks.lock

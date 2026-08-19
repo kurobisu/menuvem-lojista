@@ -1,6 +1,6 @@
 -- ═══════════════════════════════════════════════════════════════════════════
 -- Menuvem Lojista — schema inicial do banco (rodar no SQL Editor do Supabase)
--- Cria as 10 tabelas, ativa RLS (cada usuário só vê os próprios dados)
+-- Cria as 11 tabelas, ativa RLS (cada usuário só vê os próprios dados)
 -- e habilita Realtime para sync em tempo real entre dispositivos.
 -- ═══════════════════════════════════════════════════════════════════════════
 
@@ -49,20 +49,33 @@ create table if not exists public.historico_precos (
     lista_compras_nome text not null default ''
 );
 
+-- O produto é só a "família" (nome + ícone). Custo, margem-alvo e preço vivem
+-- em cada porção: um produto tem uma porção "Única" quando é de tamanho único,
+-- ou várias (P, M, G, Família...) quando é vendido em tamanhos diferentes com
+-- a mesma receita base. A ficha técnica pendura na PORÇÃO, não no produto.
 create table if not exists public.produtos (
+    id           bigint generated always as identity primary key,
+    user_id      uuid not null default auth.uid() references auth.users (id) on delete cascade,
+    nome         text not null,
+    emoji        text,
+    data_criacao timestamptz not null default now()
+);
+
+create table if not exists public.porcoes (
     id                     bigint generated always as identity primary key,
     user_id                uuid not null default auth.uid() references auth.users (id) on delete cascade,
+    produto_id             bigint not null references public.produtos (id) on delete cascade,
     nome                   text not null,
+    ordem                  integer not null default 0,
     margem_alvo_percentual double precision not null default 30,
     preco_venda_atual      double precision,
-    emoji                  text,
     data_criacao           timestamptz not null default now()
 );
 
 create table if not exists public.itens_ficha_tecnica (
     id               bigint generated always as identity primary key,
     user_id          uuid not null default auth.uid() references auth.users (id) on delete cascade,
-    produto_id       bigint not null references public.produtos (id) on delete cascade,
+    porcao_id        bigint not null references public.porcoes (id) on delete cascade,
     insumo_id        bigint not null references public.insumos (id) on delete restrict,
     quantidade       double precision not null,
     perda_percentual double precision not null default 0
@@ -95,32 +108,49 @@ create table if not exists public.componentes (
     data_criacao        timestamptz not null default now()
 );
 
+-- Um componente tem 1..N tamanhos (ex.: "Único", "35cm", "Família") -- mesmo
+-- padrão de porcoes para produtos: sempre existe pelo menos um ("Único"), e
+-- quando é só esse a UI esconde o conceito. Permite variar as quantidades de
+-- insumo por tamanho sem duplicar o componente inteiro.
+create table if not exists public.tamanhos_componente (
+    id            bigint generated always as identity primary key,
+    user_id       uuid not null default auth.uid() references auth.users (id) on delete cascade,
+    componente_id bigint not null references public.componentes (id) on delete cascade,
+    nome          text not null,
+    ordem         integer not null default 0,
+    data_criacao  timestamptz not null default now()
+);
+
 create table if not exists public.itens_componente (
-    id               bigint generated always as identity primary key,
-    user_id          uuid not null default auth.uid() references auth.users (id) on delete cascade,
-    componente_id    bigint not null references public.componentes (id) on delete cascade,
-    insumo_id        bigint not null references public.insumos (id) on delete restrict,
-    quantidade       double precision not null,
-    perda_percentual double precision not null default 0
+    id                    bigint generated always as identity primary key,
+    user_id               uuid not null default auth.uid() references auth.users (id) on delete cascade,
+    tamanho_componente_id bigint not null references public.tamanhos_componente (id) on delete cascade,
+    insumo_id             bigint not null references public.insumos (id) on delete restrict,
+    quantidade            double precision not null,
+    perda_percentual      double precision not null default 0
 );
 
 create table if not exists public.produto_componentes (
-    id            bigint generated always as identity primary key,
-    user_id       uuid not null default auth.uid() references auth.users (id) on delete cascade,
-    produto_id    bigint not null references public.produtos (id) on delete cascade,
-    componente_id bigint not null references public.componentes (id) on delete cascade,
-    multiplicador double precision not null default 1
+    id                    bigint generated always as identity primary key,
+    user_id               uuid not null default auth.uid() references auth.users (id) on delete cascade,
+    porcao_id             bigint not null references public.porcoes (id) on delete cascade,
+    componente_id         bigint not null references public.componentes (id) on delete cascade,
+    tamanho_componente_id bigint not null references public.tamanhos_componente (id) on delete cascade,
+    multiplicador         double precision not null default 1
 );
 
 create index if not exists idx_itens_lista_lista on public.itens_lista (lista_compras_id);
 create index if not exists idx_itens_lista_insumo on public.itens_lista (insumo_id);
 create index if not exists idx_historico_insumo on public.historico_precos (insumo_id);
-create index if not exists idx_ficha_produto on public.itens_ficha_tecnica (produto_id);
+create index if not exists idx_porcoes_produto on public.porcoes (produto_id);
+create index if not exists idx_ficha_porcao on public.itens_ficha_tecnica (porcao_id);
 create index if not exists idx_ficha_insumo on public.itens_ficha_tecnica (insumo_id);
-create index if not exists idx_comp_item_comp on public.itens_componente (componente_id);
+create index if not exists idx_tamanhos_componente_componente on public.tamanhos_componente (componente_id);
+create index if not exists idx_comp_item_tamanho on public.itens_componente (tamanho_componente_id);
 create index if not exists idx_comp_item_insumo on public.itens_componente (insumo_id);
-create index if not exists idx_prod_comp_produto on public.produto_componentes (produto_id);
+create index if not exists idx_prod_comp_porcao on public.produto_componentes (porcao_id);
 create index if not exists idx_prod_comp_componente on public.produto_componentes (componente_id);
+create index if not exists idx_prod_comp_tamanho on public.produto_componentes (tamanho_componente_id);
 create index if not exists idx_componentes_tipo on public.componentes (tipo_componente_id);
 
 -- ── Row Level Security: cada usuário acessa apenas as próprias linhas ──────
@@ -130,9 +160,11 @@ alter table public.listas_compras enable row level security;
 alter table public.itens_lista enable row level security;
 alter table public.historico_precos enable row level security;
 alter table public.produtos enable row level security;
+alter table public.porcoes enable row level security;
 alter table public.itens_ficha_tecnica enable row level security;
 alter table public.tipos_componente enable row level security;
 alter table public.componentes enable row level security;
+alter table public.tamanhos_componente enable row level security;
 alter table public.itens_componente enable row level security;
 alter table public.produto_componentes enable row level security;
 
@@ -146,11 +178,15 @@ create policy "dados do proprio usuario" on public.historico_precos
     for all using (auth.uid() = user_id) with check (auth.uid() = user_id);
 create policy "dados do proprio usuario" on public.produtos
     for all using (auth.uid() = user_id) with check (auth.uid() = user_id);
+create policy "dados do proprio usuario" on public.porcoes
+    for all using (auth.uid() = user_id) with check (auth.uid() = user_id);
 create policy "dados do proprio usuario" on public.itens_ficha_tecnica
     for all using (auth.uid() = user_id) with check (auth.uid() = user_id);
 create policy "dados do proprio usuario" on public.tipos_componente
     for all using (auth.uid() = user_id) with check (auth.uid() = user_id);
 create policy "dados do proprio usuario" on public.componentes
+    for all using (auth.uid() = user_id) with check (auth.uid() = user_id);
+create policy "dados do proprio usuario" on public.tamanhos_componente
     for all using (auth.uid() = user_id) with check (auth.uid() = user_id);
 create policy "dados do proprio usuario" on public.itens_componente
     for all using (auth.uid() = user_id) with check (auth.uid() = user_id);
@@ -164,8 +200,25 @@ alter publication supabase_realtime add table public.listas_compras;
 alter publication supabase_realtime add table public.itens_lista;
 alter publication supabase_realtime add table public.historico_precos;
 alter publication supabase_realtime add table public.produtos;
+alter publication supabase_realtime add table public.porcoes;
 alter publication supabase_realtime add table public.itens_ficha_tecnica;
 alter publication supabase_realtime add table public.tipos_componente;
 alter publication supabase_realtime add table public.componentes;
+alter publication supabase_realtime add table public.tamanhos_componente;
 alter publication supabase_realtime add table public.itens_componente;
 alter publication supabase_realtime add table public.produto_componentes;
+
+-- `.stream().eq(coluna_que_nao_e_chave_primaria, ...)` no app (ex.: filtrar
+-- por porcao_id, componente_id, tamanho_componente_id) precisa que o evento
+-- de Realtime carregue essa coluna também -- com REPLICA IDENTITY DEFAULT
+-- (o padrão do Postgres), um DELETE só carrega a chave primária da linha
+-- apagada, e o cliente não consegue confirmar se ela pertencia ao filtro
+-- ativo, então descarta o evento silenciosamente. A linha ficava "fantasma"
+-- na tela até a próxima abertura da tela.
+alter table public.porcoes replica identity full;
+alter table public.itens_ficha_tecnica replica identity full;
+alter table public.tipos_componente replica identity full;
+alter table public.tamanhos_componente replica identity full;
+alter table public.itens_componente replica identity full;
+alter table public.itens_lista replica identity full;
+alter table public.produto_componentes replica identity full;

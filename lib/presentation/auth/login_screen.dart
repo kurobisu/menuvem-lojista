@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../../config/app_version.dart';
 import '../../data/contas_salvas_repository.dart';
 import '../../theme/app_theme.dart';
+import '../components/responsive.dart';
 import 'auth_controller.dart';
 
 class LoginScreen extends ConsumerStatefulWidget {
@@ -31,8 +32,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   }
 
   Future<void> _entrarComConta(ContaSalva conta) async {
-    final emailQueFalhou =
-        await ref.read(authControllerProvider.notifier).entrarComContaSalva(conta);
+    final emailQueFalhou = await ref
+        .read(authControllerProvider.notifier)
+        .entrarComContaSalva(conta);
     if (!mounted) return;
     if (emailQueFalhou != null) {
       // Token expirado: preenche o e-mail para o usuário só digitar a senha.
@@ -58,7 +60,8 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     final controller = ref.read(authControllerProvider.notifier);
     final email = _emailController.text;
     final senha = _senhaController.text;
-    final isValid = email.contains('@') && senha.length >= 6 && !uiState.isLoading;
+    final isValid =
+        email.contains('@') && senha.length >= 6 && !uiState.isLoading;
 
     return Scaffold(
       appBar: widget.modoTroca
@@ -71,184 +74,194 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
               ),
             )
           : null,
-      body: SingleChildScrollView(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 40),
-              decoration: const BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topCenter,
-                  end: Alignment.bottomCenter,
-                  colors: [purplePrimary, purpleLight],
+      body: MaxWidthCenter(
+        maxWidth: kFormMaxWidth,
+        child: SingleChildScrollView(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 20,
+                  vertical: 40,
                 ),
-              ),
-              child: SafeArea(
-                bottom: false,
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Menuvem',
-                      style: Theme.of(context)
-                          .textTheme
-                          .labelMedium
-                          ?.copyWith(color: Colors.white.withValues(alpha: 0.8)),
-                    ),
-                    Text(
-                      'Lojista',
-                      style: Theme.of(context).textTheme.headlineLarge?.copyWith(
-                            color: Colors.white,
-                            fontWeight: FontWeight.bold,
-                          ),
-                    ),
-                    const SizedBox(height: 8),
-                    Text(
-                      'Precifique com dados, não com achismo',
-                      style: Theme.of(context)
-                          .textTheme
-                          .bodyMedium
-                          ?.copyWith(color: Colors.white.withValues(alpha: 0.85)),
-                    ),
-                  ],
+                decoration: const BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topCenter,
+                    end: Alignment.bottomCenter,
+                    colors: [purplePrimary, purpleLight],
+                  ),
                 ),
-              ),
-            ),
-            Padding(
-              padding: const EdgeInsets.all(20),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  if (uiState.contasSalvas.isNotEmpty && !uiState.isSignUpMode) ...[
-                    _ContasSalvas(
-                      contas: uiState.contasSalvas,
-                      habilitado: !uiState.isLoading,
-                      onEntrar: _entrarComConta,
-                      onRemover: controller.removerConta,
-                    ),
-                    const Divider(height: 32),
-                  ],
-                  Text(
-                    uiState.isSignUpMode ? 'Criar conta' : 'Entrar',
-                    style: Theme.of(context)
-                        .textTheme
-                        .titleLarge
-                        ?.copyWith(fontWeight: FontWeight.w600),
-                  ),
-                  const SizedBox(height: 12),
-                  TextField(
-                    controller: _emailController,
-                    keyboardType: TextInputType.emailAddress,
-                    decoration: const InputDecoration(
-                      labelText: 'E-mail',
-                      border: OutlineInputBorder(),
-                    ),
-                    onChanged: (_) => setState(() {}),
-                  ),
-                  const SizedBox(height: 12),
-                  TextField(
-                    controller: _senhaController,
-                    obscureText: !uiState.senhaVisivel,
-                    keyboardType: TextInputType.visiblePassword,
-                    decoration: InputDecoration(
-                      labelText: 'Senha (mín. 6 caracteres)',
-                      border: const OutlineInputBorder(),
-                      suffixIcon: IconButton(
-                        icon: Icon(
-                          uiState.senhaVisivel
-                              ? Icons.visibility_off
-                              : Icons.visibility,
-                        ),
-                        tooltip: uiState.senhaVisivel
-                            ? 'Ocultar senha'
-                            : 'Mostrar senha',
-                        onPressed: controller.toggleSenhaVisivel,
-                      ),
-                    ),
-                    onChanged: (_) => setState(() {}),
-                  ),
-                  Row(
+                child: SafeArea(
+                  bottom: false,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Checkbox(
-                        value: uiState.salvarLogin,
-                        onChanged: (v) => controller.setSalvarLogin(v ?? false),
+                      Text(
+                        'Menuvem',
+                        style: Theme.of(context).textTheme.labelMedium
+                            ?.copyWith(
+                              color: Colors.white.withValues(alpha: 0.8),
+                            ),
                       ),
-                      Expanded(
-                        child: GestureDetector(
-                          onTap: () => controller.setSalvarLogin(!uiState.salvarLogin),
-                          child: Text(
-                            'Salvar dados de login',
-                            style: Theme.of(context).textTheme.bodyMedium,
-                          ),
+                      Text(
+                        'Lojista',
+                        style: Theme.of(context).textTheme.headlineLarge
+                            ?.copyWith(
+                              color: Colors.white,
+                              fontWeight: FontWeight.bold,
+                            ),
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        'Precifique com dados, não com achismo',
+                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                          color: Colors.white.withValues(alpha: 0.85),
                         ),
-                      ),
-                      TextButton(
-                        onPressed: uiState.isLoading
-                            ? null
-                            : () => controller.resetarSenha(_emailController.text.trim()),
-                        child: const Text('Esqueci minha senha'),
                       ),
                     ],
                   ),
-                  if (uiState.error != null) ...[
-                    const SizedBox(height: 4),
-                    Text(
-                      uiState.error!,
-                      style: Theme.of(context)
-                          .textTheme
-                          .bodySmall
-                          ?.copyWith(color: errorRed),
-                    ),
-                  ],
-                  if (uiState.aviso != null) ...[
-                    const SizedBox(height: 4),
-                    Text(
-                      uiState.aviso!,
-                      style: Theme.of(context)
-                          .textTheme
-                          .bodySmall
-                          ?.copyWith(color: successGreen),
-                    ),
-                  ],
-                  const SizedBox(height: 12),
-                  FilledButton(
-                    onPressed: isValid ? () => _submit(email, senha) : null,
-                    child: uiState.isLoading
-                        ? const SizedBox(
-                            width: 20,
-                            height: 20,
-                            child: CircularProgressIndicator(
-                              strokeWidth: 2,
-                              color: Colors.white,
-                            ),
-                          )
-                        : Text(uiState.isSignUpMode ? 'Criar conta' : 'Entrar'),
-                  ),
-                  TextButton(
-                    onPressed: controller.toggleMode,
-                    child: Text(
-                      uiState.isSignUpMode
-                          ? 'Já tem conta? Entrar'
-                          : 'Não tem conta? Cadastre-se',
-                      style: const TextStyle(color: purplePrimary),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            Padding(
-              padding: const EdgeInsets.only(bottom: 24),
-              child: Center(
-                child: Text(
-                  appVersionLabel,
-                  style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                        color: Theme.of(context).colorScheme.onSurfaceVariant,
-                      ),
                 ),
               ),
-            ),
-          ],
+              Padding(
+                padding: const EdgeInsets.all(20),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    if (uiState.contasSalvas.isNotEmpty &&
+                        !uiState.isSignUpMode) ...[
+                      _ContasSalvas(
+                        contas: uiState.contasSalvas,
+                        habilitado: !uiState.isLoading,
+                        onEntrar: _entrarComConta,
+                        onRemover: controller.removerConta,
+                      ),
+                      const Divider(height: 32),
+                    ],
+                    Text(
+                      uiState.isSignUpMode ? 'Criar conta' : 'Entrar',
+                      style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    TextField(
+                      controller: _emailController,
+                      keyboardType: TextInputType.emailAddress,
+                      decoration: const InputDecoration(
+                        labelText: 'E-mail',
+                        border: OutlineInputBorder(),
+                      ),
+                      onChanged: (_) => setState(() {}),
+                    ),
+                    const SizedBox(height: 12),
+                    TextField(
+                      controller: _senhaController,
+                      obscureText: !uiState.senhaVisivel,
+                      keyboardType: TextInputType.visiblePassword,
+                      decoration: InputDecoration(
+                        labelText: 'Senha (mín. 6 caracteres)',
+                        border: const OutlineInputBorder(),
+                        suffixIcon: IconButton(
+                          icon: Icon(
+                            uiState.senhaVisivel
+                                ? Icons.visibility_off
+                                : Icons.visibility,
+                          ),
+                          tooltip: uiState.senhaVisivel
+                              ? 'Ocultar senha'
+                              : 'Mostrar senha',
+                          onPressed: controller.toggleSenhaVisivel,
+                        ),
+                      ),
+                      onChanged: (_) => setState(() {}),
+                    ),
+                    Row(
+                      children: [
+                        Checkbox(
+                          value: uiState.salvarLogin,
+                          onChanged: (v) =>
+                              controller.setSalvarLogin(v ?? false),
+                        ),
+                        Expanded(
+                          child: GestureDetector(
+                            onTap: () =>
+                                controller.setSalvarLogin(!uiState.salvarLogin),
+                            child: Text(
+                              'Salvar dados de login',
+                              style: Theme.of(context).textTheme.bodyMedium,
+                            ),
+                          ),
+                        ),
+                        TextButton(
+                          onPressed: uiState.isLoading
+                              ? null
+                              : () => controller.resetarSenha(
+                                  _emailController.text.trim(),
+                                ),
+                          child: const Text('Esqueci minha senha'),
+                        ),
+                      ],
+                    ),
+                    if (uiState.error != null) ...[
+                      const SizedBox(height: 4),
+                      Text(
+                        uiState.error!,
+                        style: Theme.of(
+                          context,
+                        ).textTheme.bodySmall?.copyWith(color: errorRed),
+                      ),
+                    ],
+                    if (uiState.aviso != null) ...[
+                      const SizedBox(height: 4),
+                      Text(
+                        uiState.aviso!,
+                        style: Theme.of(
+                          context,
+                        ).textTheme.bodySmall?.copyWith(color: successGreen),
+                      ),
+                    ],
+                    const SizedBox(height: 12),
+                    FilledButton(
+                      onPressed: isValid ? () => _submit(email, senha) : null,
+                      child: uiState.isLoading
+                          ? const SizedBox(
+                              width: 20,
+                              height: 20,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                color: Colors.white,
+                              ),
+                            )
+                          : Text(
+                              uiState.isSignUpMode ? 'Criar conta' : 'Entrar',
+                            ),
+                    ),
+                    TextButton(
+                      onPressed: controller.toggleMode,
+                      child: Text(
+                        uiState.isSignUpMode
+                            ? 'Já tem conta? Entrar'
+                            : 'Não tem conta? Cadastre-se',
+                        style: const TextStyle(color: purplePrimary),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              Padding(
+                padding: const EdgeInsets.only(bottom: 24),
+                child: Center(
+                  child: Text(
+                    appVersionLabel,
+                    style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                      color: Theme.of(context).colorScheme.onSurfaceVariant,
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -276,10 +289,9 @@ class _ContasSalvas extends StatelessWidget {
       children: [
         Text(
           'Entrar rapidamente',
-          style: Theme.of(context)
-              .textTheme
-              .titleSmall
-              ?.copyWith(fontWeight: FontWeight.w600),
+          style: Theme.of(
+            context,
+          ).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w600),
         ),
         const SizedBox(height: 12),
         SizedBox(
@@ -308,9 +320,7 @@ class _ContasSalvas extends StatelessWidget {
                               backgroundColor: purpleContainer,
                               child: Text(
                                 conta.inicial,
-                                style: Theme.of(context)
-                                    .textTheme
-                                    .titleLarge
+                                style: Theme.of(context).textTheme.titleLarge
                                     ?.copyWith(
                                       color: purpleOnContainer,
                                       fontWeight: FontWeight.bold,

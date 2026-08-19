@@ -42,9 +42,7 @@ class HistoricoPrecoRepository {
     return _client
         .from(_table)
         .stream(primaryKey: ['id'])
-        .map(
-          (rows) => rows.map((r) => r['insumo_id'] as int).toSet().toList(),
-        );
+        .map((rows) => rows.map((r) => r['insumo_id'] as int).toSet().toList());
   }
 
   Future<int> insertHistorico(HistoricoPreco historico) async {

@@ -31,24 +31,25 @@ const trendStable = Color(0xFF6B7280);
 const trendDown = Color(0xFF15803D);
 
 ThemeData menuvemLojistaTheme() {
-  final colorScheme = ColorScheme.fromSeed(
-    seedColor: purplePrimary,
-    brightness: Brightness.light,
-  ).copyWith(
-    primary: purplePrimary,
-    onPrimary: Colors.white,
-    primaryContainer: purpleContainer,
-    onPrimaryContainer: purpleOnContainer,
-    secondary: yellowSecondary,
-    secondaryContainer: yellowContainer,
-    onSecondaryContainer: yellowOnContainer,
-    surface: surfaceLight,
-    surfaceContainerHighest: surfaceVariantLight,
-    onSurfaceVariant: onSurfaceVariantLight,
-    outline: outlineLight,
-    error: errorRed,
-    errorContainer: errorContainer,
-  );
+  final colorScheme =
+      ColorScheme.fromSeed(
+        seedColor: purplePrimary,
+        brightness: Brightness.light,
+      ).copyWith(
+        primary: purplePrimary,
+        onPrimary: Colors.white,
+        primaryContainer: purpleContainer,
+        onPrimaryContainer: purpleOnContainer,
+        secondary: yellowSecondary,
+        secondaryContainer: yellowContainer,
+        onSecondaryContainer: yellowOnContainer,
+        surface: surfaceLight,
+        surfaceContainerHighest: surfaceVariantLight,
+        onSurfaceVariant: onSurfaceVariantLight,
+        outline: outlineLight,
+        error: errorRed,
+        errorContainer: errorContainer,
+      );
 
   return ThemeData(
     useMaterial3: true,
@@ -58,6 +59,37 @@ ThemeData menuvemLojistaTheme() {
       backgroundColor: backgroundLight,
       foregroundColor: onBackgroundLight,
       elevation: 0,
+    ),
+    // Preenchido + borda sempre visível: só a linha de baixo do padrão do
+    // Material (sem preenchimento) fazia campo de formulário e texto comum
+    // parecerem a mesma coisa — relato do dono ao testar o app.
+    inputDecorationTheme: InputDecorationTheme(
+      filled: true,
+      fillColor: surfaceVariantLight,
+      contentPadding: const EdgeInsets.symmetric(
+        horizontal: 16,
+        vertical: 14,
+      ),
+      border: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(14),
+        borderSide: const BorderSide(color: outlineLight, width: 1.3),
+      ),
+      enabledBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(14),
+        borderSide: const BorderSide(color: outlineLight, width: 1.3),
+      ),
+      focusedBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(14),
+        borderSide: const BorderSide(color: purplePrimary, width: 2),
+      ),
+      errorBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(14),
+        borderSide: const BorderSide(color: errorRed, width: 1.3),
+      ),
+      focusedErrorBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(14),
+        borderSide: const BorderSide(color: errorRed, width: 2),
+      ),
     ),
   );
 }

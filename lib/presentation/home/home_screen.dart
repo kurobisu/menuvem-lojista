@@ -5,12 +5,14 @@ import 'package:intl/intl.dart';
 
 import '../../config/app_version.dart';
 import '../../domain/model/lista_compras.dart';
-import '../../domain/model/produto_com_custo.dart';
+import '../../domain/model/porcao_com_custo.dart';
+import '../../domain/model/produto.dart';
 import '../../domain/model/tendencia_preco.dart';
 import '../../providers/repository_providers.dart';
 import '../../theme/app_theme.dart';
 import '../components/empty_state.dart';
 import '../components/formatters.dart';
+import '../components/responsive.dart';
 import '../components/tendencia_indicador.dart';
 import 'home_controller.dart';
 
@@ -22,250 +24,291 @@ class HomeScreen extends ConsumerWidget {
     final homeData = ref.watch(homeDataProvider);
 
     return Scaffold(
-      body: CustomScrollView(
-        slivers: [
-          SliverToBoxAdapter(
-            child: Container(
-              width: double.infinity,
-              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
-              decoration: const BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topCenter,
-                  end: Alignment.bottomCenter,
-                  colors: [purplePrimary, purpleLight],
+      body: MaxWidthCenter(
+        maxWidth: kDashboardMaxWidth,
+        child: CustomScrollView(
+          slivers: [
+            SliverToBoxAdapter(
+              child: Container(
+                width: double.infinity,
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 20,
+                  vertical: 20,
+                ),
+                decoration: const BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topCenter,
+                    end: Alignment.bottomCenter,
+                    colors: [purplePrimary, purpleLight],
+                  ),
+                ),
+                child: SafeArea(
+                  bottom: false,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Row(
+                                mainAxisSize: MainAxisSize.min,
+                                crossAxisAlignment: CrossAxisAlignment.baseline,
+                                textBaseline: TextBaseline.alphabetic,
+                                children: [
+                                  Text(
+                                    'Menuvem',
+                                    style: Theme.of(context)
+                                        .textTheme
+                                        .labelMedium
+                                        ?.copyWith(
+                                          color: Colors.white.withValues(
+                                            alpha: 0.8,
+                                          ),
+                                        ),
+                                  ),
+                                  const SizedBox(width: 6),
+                                  Text(
+                                    appVersionLabel,
+                                    style: Theme.of(context)
+                                        .textTheme
+                                        .labelSmall
+                                        ?.copyWith(
+                                          color: Colors.white.withValues(
+                                            alpha: 0.6,
+                                          ),
+                                          fontSize: 10,
+                                        ),
+                                  ),
+                                ],
+                              ),
+                              Text(
+                                'Lojista',
+                                style: Theme.of(context)
+                                    .textTheme
+                                    .headlineMedium
+                                    ?.copyWith(
+                                      color: Colors.white,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                              ),
+                            ],
+                          ),
+                          Row(
+                            children: [
+                              IconButton(
+                                onPressed: () => context.push('/price-history'),
+                                icon: const Icon(
+                                  Icons.trending_up,
+                                  color: Colors.white,
+                                ),
+                                tooltip: 'Histórico de preços',
+                              ),
+                              IconButton(
+                                onPressed: () => context.push('/trocar-conta'),
+                                icon: const Icon(
+                                  Icons.switch_account,
+                                  color: Colors.white,
+                                ),
+                                tooltip: 'Trocar de conta',
+                              ),
+                              IconButton(
+                                onPressed: () =>
+                                    ref.read(authRepositoryProvider).signOut(),
+                                icon: const Icon(
+                                  Icons.exit_to_app,
+                                  color: Colors.white,
+                                ),
+                                tooltip: 'Sair',
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 16),
+                      homeData.maybeWhen(
+                        data: (data) => data.ultimaLista != null
+                            ? _UltimaListaCard(
+                                lista: data.ultimaLista!,
+                                onTap: () => context.go(
+                                  '/shopping-lists/${data.ultimaLista!.id}',
+                                ),
+                              )
+                            : const SizedBox.shrink(),
+                        orElse: () => const SizedBox.shrink(),
+                      ),
+                    ],
+                  ),
                 ),
               ),
-              child: SafeArea(
-                bottom: false,
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+            ),
+            SliverToBoxAdapter(child: _SectionHeader(title: 'Precificação')),
+            SliverToBoxAdapter(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                child: Row(
                   children: [
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Row(
-                              mainAxisSize: MainAxisSize.min,
-                              crossAxisAlignment: CrossAxisAlignment.baseline,
-                              textBaseline: TextBaseline.alphabetic,
-                              children: [
-                                Text(
-                                  'Menuvem',
-                                  style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                                        color: Colors.white.withValues(alpha: 0.8),
-                                      ),
-                                ),
-                                const SizedBox(width: 6),
-                                Text(
-                                  appVersionLabel,
-                                  style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                                        color: Colors.white.withValues(alpha: 0.6),
-                                        fontSize: 10,
-                                      ),
-                                ),
-                              ],
-                            ),
-                            Text(
-                              'Lojista',
-                              style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                                    color: Colors.white,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                            ),
-                          ],
-                        ),
-                        Row(
-                          children: [
-                            IconButton(
-                              onPressed: () => context.push('/price-history'),
-                              icon: const Icon(Icons.trending_up, color: Colors.white),
-                              tooltip: 'Histórico de preços',
-                            ),
-                            IconButton(
-                              onPressed: () => context.push('/trocar-conta'),
-                              icon: const Icon(Icons.switch_account,
-                                  color: Colors.white),
-                              tooltip: 'Trocar de conta',
-                            ),
-                            IconButton(
-                              onPressed: () =>
-                                  ref.read(authRepositoryProvider).signOut(),
-                              icon: const Icon(Icons.exit_to_app, color: Colors.white),
-                              tooltip: 'Sair',
-                            ),
-                          ],
-                        ),
-                      ],
+                    Expanded(
+                      child: _PrecificacaoCard(
+                        titulo: 'Produtos',
+                        subtitulo: 'Fichas técnicas e preços',
+                        icon: Icons.restaurant_outlined,
+                        onTap: () => context.push('/produtos'),
+                      ),
                     ),
-                    const SizedBox(height: 16),
-                    homeData.maybeWhen(
-                      data: (data) => data.ultimaLista != null
-                          ? _UltimaListaCard(
-                              lista: data.ultimaLista!,
-                              onTap: () => context
-                                  .go('/shopping-lists/${data.ultimaLista!.id}'),
-                            )
-                          : const SizedBox.shrink(),
-                      orElse: () => const SizedBox.shrink(),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: _PrecificacaoCard(
+                        titulo: 'Componentes',
+                        subtitulo: 'Blocos reutilizáveis',
+                        icon: Icons.widgets,
+                        onTap: () => context.push('/componentes'),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: _PrecificacaoCard(
+                        titulo: 'Insumos',
+                        subtitulo: 'Biblioteca e custos',
+                        icon: Icons.inventory_2_outlined,
+                        onTap: () => context.push('/insumos'),
+                      ),
                     ),
                   ],
                 ),
               ),
             ),
-          ),
-          SliverToBoxAdapter(
-            child: _SectionHeader(title: 'Precificação'),
-          ),
-          SliverToBoxAdapter(
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              child: Row(
-                children: [
-                  Expanded(
-                    child: _PrecificacaoCard(
-                      titulo: 'Produtos',
-                      subtitulo: 'Fichas técnicas e preços',
-                      icon: Icons.restaurant_outlined,
-                      onTap: () => context.push('/produtos'),
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: _PrecificacaoCard(
-                      titulo: 'Componentes',
-                      subtitulo: 'Blocos reutilizáveis',
-                      icon: Icons.widgets,
-                      onTap: () => context.push('/componentes'),
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: _PrecificacaoCard(
-                      titulo: 'Insumos',
-                      subtitulo: 'Biblioteca e custos',
-                      icon: Icons.inventory_2_outlined,
-                      onTap: () => context.push('/insumos'),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-          homeData.maybeWhen(
-            data: (data) {
-              if (data.produtosAbaixoDaMeta.isEmpty) {
-                return const SliverToBoxAdapter(child: SizedBox.shrink());
-              }
-              return SliverList.list(
-                children: [
-                  _SectionHeader(title: 'Alertas de Margem'),
-                  ...data.produtosAbaixoDaMeta.map(
-                    (item) => Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-                      child: _AlertaMargemRow(
-                        item: item,
-                        onTap: () => context.push('/produtos/${item.produto.id}'),
-                      ),
-                    ),
-                  ),
-                ],
-              );
-            },
-            orElse: () => const SliverToBoxAdapter(child: SizedBox.shrink()),
-          ),
-          SliverToBoxAdapter(
-            child: _SectionHeader(
-              title: 'Listas Recentes',
-              action: 'Ver todas',
-              onAction: () => context.push('/shopping-lists'),
-            ),
-          ),
-          homeData.when(
-            loading: () => const SliverToBoxAdapter(
-              child: Padding(
-                padding: EdgeInsets.all(32),
-                child: Center(child: CircularProgressIndicator(color: purplePrimary)),
-              ),
-            ),
-            error: (e, _) => SliverToBoxAdapter(
-              child: Padding(
-                padding: const EdgeInsets.all(32),
-                child: Center(child: Text('Erro: $e')),
-              ),
-            ),
-            data: (data) {
-              if (data.todasListas.isEmpty) {
-                return const SliverToBoxAdapter(
-                  child: EmptyState(
-                    icon: Icons.shopping_cart_outlined,
-                    title: 'Nenhuma lista ainda',
-                    subtitle: 'Crie sua primeira lista de compras tocando no botão +',
-                  ),
-                );
-              }
-              return SliverToBoxAdapter(
-                child: SizedBox(
-                  height: 132,
-                  child: ListView(
-                    scrollDirection: Axis.horizontal,
-                    padding: const EdgeInsets.symmetric(horizontal: 16),
-                    children: data.todasListas
-                        .take(5)
-                        .map(
-                          (lista) => _ListaResumoCard(
-                            lista: lista,
-                            onTap: () => context.push('/shopping-lists/${lista.id}'),
-                          ),
-                        )
-                        .toList(),
-                ),
-              ),
-            );
-            },
-          ),
-          SliverToBoxAdapter(
-            child: _SectionHeader(
-              title: 'Variação de Preços',
-              action: 'Histórico completo',
-              onAction: () => context.push('/price-history'),
-            ),
-          ),
-          homeData.maybeWhen(
-            data: (data) {
-              if (data.insumosComTendencia.isEmpty) {
-                return const SliverToBoxAdapter(
-                  child: EmptyState(
-                    icon: Icons.insights_outlined,
-                    title: 'Sem dados de variação',
-                    subtitle: 'Finalize listas de compras para ver tendências de preço',
-                  ),
-                );
-              }
-              final ordenados = [...data.insumosComTendencia]..sort(
-                  (a, b) => (b.tendencia == TendenciaPreco.alta ? 1 : 0)
-                      .compareTo(a.tendencia == TendenciaPreco.alta ? 1 : 0),
-                );
-              return SliverList.list(
-                children: ordenados
-                    .map(
-                      (item) => Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-                        child: _InsumoTendenciaRow(
-                          item: item,
+            homeData.maybeWhen(
+              data: (data) {
+                if (data.porcoesAbaixoDaMeta.isEmpty) {
+                  return const SliverToBoxAdapter(child: SizedBox.shrink());
+                }
+                return SliverList.list(
+                  children: [
+                    _SectionHeader(title: 'Alertas de Margem'),
+                    ...data.porcoesAbaixoDaMeta.map(
+                      (alerta) => Padding(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 4,
+                        ),
+                        child: _AlertaMargemRow(
+                          produto: alerta.produto,
+                          item: alerta.porcao,
                           onTap: () =>
-                              context.push('/price-history/${item.insumo.id}'),
+                              context.push('/produtos/${alerta.produto.id}'),
                         ),
                       ),
-                    )
-                    .toList(),
-              );
-            },
-            orElse: () => const SliverToBoxAdapter(child: SizedBox.shrink()),
-          ),
-          const SliverToBoxAdapter(child: SizedBox(height: 88)),
-        ],
+                    ),
+                  ],
+                );
+              },
+              orElse: () => const SliverToBoxAdapter(child: SizedBox.shrink()),
+            ),
+            SliverToBoxAdapter(
+              child: _SectionHeader(
+                title: 'Listas Recentes',
+                action: 'Ver todas',
+                onAction: () => context.push('/shopping-lists'),
+              ),
+            ),
+            homeData.when(
+              loading: () => const SliverToBoxAdapter(
+                child: Padding(
+                  padding: EdgeInsets.all(32),
+                  child: Center(
+                    child: CircularProgressIndicator(color: purplePrimary),
+                  ),
+                ),
+              ),
+              error: (e, _) => SliverToBoxAdapter(
+                child: Padding(
+                  padding: const EdgeInsets.all(32),
+                  child: Center(child: Text('Erro: $e')),
+                ),
+              ),
+              data: (data) {
+                if (data.todasListas.isEmpty) {
+                  return const SliverToBoxAdapter(
+                    child: EmptyState(
+                      icon: Icons.shopping_cart_outlined,
+                      title: 'Nenhuma lista ainda',
+                      subtitle:
+                          'Crie sua primeira lista de compras tocando no botão +',
+                    ),
+                  );
+                }
+                return SliverToBoxAdapter(
+                  child: SizedBox(
+                    height: 132,
+                    child: ListView(
+                      scrollDirection: Axis.horizontal,
+                      padding: const EdgeInsets.symmetric(horizontal: 16),
+                      children: data.todasListas
+                          .take(5)
+                          .map(
+                            (lista) => _ListaResumoCard(
+                              lista: lista,
+                              onTap: () =>
+                                  context.push('/shopping-lists/${lista.id}'),
+                            ),
+                          )
+                          .toList(),
+                    ),
+                  ),
+                );
+              },
+            ),
+            SliverToBoxAdapter(
+              child: _SectionHeader(
+                title: 'Variação de Preços',
+                action: 'Histórico completo',
+                onAction: () => context.push('/price-history'),
+              ),
+            ),
+            homeData.maybeWhen(
+              data: (data) {
+                if (data.insumosComTendencia.isEmpty) {
+                  return const SliverToBoxAdapter(
+                    child: EmptyState(
+                      icon: Icons.insights_outlined,
+                      title: 'Sem dados de variação',
+                      subtitle:
+                          'Finalize listas de compras para ver tendências de preço',
+                    ),
+                  );
+                }
+                final ordenados = [...data.insumosComTendencia]
+                  ..sort(
+                    (a, b) => (b.tendencia == TendenciaPreco.alta ? 1 : 0)
+                        .compareTo(a.tendencia == TendenciaPreco.alta ? 1 : 0),
+                  );
+                return SliverList.list(
+                  children: ordenados
+                      .map(
+                        (item) => Padding(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 16,
+                            vertical: 4,
+                          ),
+                          child: _InsumoTendenciaRow(
+                            item: item,
+                            onTap: () => context.push(
+                              '/price-history/${item.insumo.id}',
+                            ),
+                          ),
+                        ),
+                      )
+                      .toList(),
+                );
+              },
+              orElse: () => const SliverToBoxAdapter(child: SizedBox.shrink()),
+            ),
+            const SliverToBoxAdapter(child: SizedBox(height: 88)),
+          ],
+        ),
       ),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () => context.push('/shopping-lists'),
@@ -306,16 +349,15 @@ class _UltimaListaCard extends StatelessWidget {
                       lista.nome,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-                      style: Theme.of(context)
-                          .textTheme
-                          .titleSmall
-                          ?.copyWith(color: Colors.white),
+                      style: Theme.of(
+                        context,
+                      ).textTheme.titleSmall?.copyWith(color: Colors.white),
                     ),
                     Text(
                       formatter.format(lista.dataCriacao),
                       style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                            color: Colors.white.withValues(alpha: 0.75),
-                          ),
+                        color: Colors.white.withValues(alpha: 0.75),
+                      ),
                     ),
                   ],
                 ),
@@ -327,25 +369,30 @@ class _UltimaListaCard extends StatelessWidget {
                     Text(
                       'R\$ ${formatarMoeda(lista.totalGasto)}',
                       style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                            color: yellowSecondary,
-                            fontWeight: FontWeight.bold,
-                          ),
+                        color: yellowSecondary,
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 2,
+                    ),
                     decoration: BoxDecoration(
-                      color: (lista.status == StatusLista.aberta
-                              ? yellowContainer
-                              : successContainer)
-                          .withValues(alpha: 0.3),
+                      color:
+                          (lista.status == StatusLista.aberta
+                                  ? yellowContainer
+                                  : successContainer)
+                              .withValues(alpha: 0.3),
                       borderRadius: BorderRadius.circular(50),
                     ),
                     child: Text(
-                      lista.status == StatusLista.aberta ? 'Aberta' : 'Finalizada',
-                      style: Theme.of(context)
-                          .textTheme
-                          .labelSmall
-                          ?.copyWith(color: Colors.white),
+                      lista.status == StatusLista.aberta
+                          ? 'Aberta'
+                          : 'Finalizada',
+                      style: Theme.of(
+                        context,
+                      ).textTheme.labelSmall?.copyWith(color: Colors.white),
                     ),
                   ),
                 ],
@@ -398,17 +445,17 @@ class _ListaResumoCard extends StatelessWidget {
                 Text(
                   formatter.format(lista.dataCriacao),
                   style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        color: Theme.of(context).colorScheme.onSurfaceVariant,
-                      ),
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
+                  ),
                 ),
                 if (lista.totalGasto > 0) ...[
                   const SizedBox(height: 4),
                   Text(
                     'R\$ ${formatarMoeda(lista.totalGasto)}',
                     style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                          color: purplePrimary,
-                          fontWeight: FontWeight.w600,
-                        ),
+                      color: purplePrimary,
+                      fontWeight: FontWeight.w600,
+                    ),
                   ),
                 ],
               ],
@@ -447,8 +494,8 @@ class _InsumoTendenciaRow extends StatelessWidget {
                     Text(
                       'por ${item.insumo.unidadeCompra}',
                       style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                            color: Theme.of(context).colorScheme.onSurfaceVariant,
-                          ),
+                        color: Theme.of(context).colorScheme.onSurfaceVariant,
+                      ),
                     ),
                   ],
                 ),
@@ -458,13 +505,15 @@ class _InsumoTendenciaRow extends StatelessWidget {
                 children: [
                   Text(
                     'R\$ ${formatarMoeda(item.ultimoPreco)}',
-                    style: Theme.of(context)
-                        .textTheme
-                        .titleSmall
-                        ?.copyWith(fontWeight: FontWeight.w600),
+                    style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                      fontWeight: FontWeight.w600,
+                    ),
                   ),
                   const SizedBox(height: 2),
-                  TendenciaIndicador(tendencia: item.tendencia, showLabel: true),
+                  TendenciaIndicador(
+                    tendencia: item.tendencia,
+                    showLabel: true,
+                  ),
                 ],
               ),
             ],
@@ -502,16 +551,15 @@ class _PrecificacaoCard extends StatelessWidget {
               const SizedBox(height: 8),
               Text(
                 titulo,
-                style: Theme.of(context)
-                    .textTheme
-                    .titleSmall
-                    ?.copyWith(fontWeight: FontWeight.w600),
+                style: Theme.of(
+                  context,
+                ).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w600),
               ),
               Text(
                 subtitulo,
                 style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                      color: Theme.of(context).colorScheme.onSurfaceVariant,
-                    ),
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
+                ),
               ),
             ],
           ),
@@ -522,8 +570,13 @@ class _PrecificacaoCard extends StatelessWidget {
 }
 
 class _AlertaMargemRow extends StatelessWidget {
-  const _AlertaMargemRow({required this.item, required this.onTap});
-  final ProdutoComCusto item;
+  const _AlertaMargemRow({
+    required this.produto,
+    required this.item,
+    required this.onTap,
+  });
+  final Produto produto;
+  final PorcaoComCusto item;
   final VoidCallback onTap;
 
   @override
@@ -542,17 +595,17 @@ class _AlertaMargemRow extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      item.produto.nome,
+                      '${produto.nome} · ${item.porcao.nome}',
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: Theme.of(context).textTheme.titleSmall,
                     ),
                     Text(
                       'Margem ${(item.margemRealPercentual ?? 0.0).toStringAsFixed(1)}% · '
-                      'meta ${item.produto.margemAlvoPercentual.toStringAsFixed(1)}%',
+                      'meta ${item.porcao.margemAlvoPercentual.toStringAsFixed(1)}%',
                       style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                            color: Theme.of(context).colorScheme.onSurfaceVariant,
-                          ),
+                        color: Theme.of(context).colorScheme.onSurfaceVariant,
+                      ),
                     ),
                   ],
                 ),
@@ -563,15 +616,15 @@ class _AlertaMargemRow extends StatelessWidget {
                   Text(
                     'R\$ ${formatarMoeda(item.precoSugerido)}',
                     style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                          fontWeight: FontWeight.w600,
-                          color: purplePrimary,
-                        ),
+                      fontWeight: FontWeight.w600,
+                      color: purplePrimary,
+                    ),
                   ),
                   Text(
                     'preço sugerido',
                     style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                          color: Theme.of(context).colorScheme.onSurfaceVariant,
-                        ),
+                      color: Theme.of(context).colorScheme.onSurfaceVariant,
+                    ),
                   ),
                 ],
               ),
@@ -598,15 +651,17 @@ class _SectionHeader extends StatelessWidget {
         children: [
           Text(
             title,
-            style: Theme.of(context)
-                .textTheme
-                .titleMedium
-                ?.copyWith(fontWeight: FontWeight.w600),
+            style: Theme.of(
+              context,
+            ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600),
           ),
           if (action != null && onAction != null)
             TextButton(
               onPressed: onAction,
-              child: Text(action!, style: const TextStyle(color: purplePrimary)),
+              child: Text(
+                action!,
+                style: const TextStyle(color: purplePrimary),
+              ),
             ),
         ],
       ),

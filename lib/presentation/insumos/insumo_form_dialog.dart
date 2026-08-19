@@ -2,21 +2,23 @@ import 'package:flutter/material.dart';
 
 import '../../domain/model/categoria_insumo.dart';
 import '../../domain/model/insumo.dart';
-import '../../theme/app_theme.dart';
+import '../components/campo_com_ajuda.dart';
 import '../components/emoji_picker_field.dart';
 import '../components/emojis.dart';
+import '../components/form_sheet_header.dart';
 import '../components/formatters.dart';
 import '../components/unidades_medida.dart';
 
-typedef InsumoFormConfirm = void Function({
-  required String nome,
-  required CategoriaInsumo categoria,
-  required String unidadeCompra,
-  required String unidadeUso,
-  required double fatorConversao,
-  required double custoAtual,
-  String? emoji,
-});
+typedef InsumoFormConfirm =
+    void Function({
+      required String nome,
+      required CategoriaInsumo categoria,
+      required String unidadeCompra,
+      required String unidadeUso,
+      required double fatorConversao,
+      required double custoAtual,
+      String? emoji,
+    });
 
 /// Normaliza pro valor canônico do preset (comparação sem diferenciar
 /// maiúsculas/minúsculas) ou devolve o valor bruto se não bater com nenhum
@@ -71,11 +73,7 @@ List<DropdownMenuItem<String>> _itensUnidade(String? valorAtual) {
 /// O botão Salvar fica no cabeçalho fixo (nunca atrás do teclado) — só o
 /// conteúdo abaixo rola.
 class InsumoFormDialog extends StatefulWidget {
-  const InsumoFormDialog({
-    super.key,
-    this.insumo,
-    required this.onConfirm,
-  });
+  const InsumoFormDialog({super.key, this.insumo, required this.onConfirm});
 
   final Insumo? insumo;
   final InsumoFormConfirm onConfirm;
@@ -85,17 +83,20 @@ class InsumoFormDialog extends StatefulWidget {
 }
 
 class _InsumoFormDialogState extends State<InsumoFormDialog> {
-  late final _nomeController = TextEditingController(text: widget.insumo?.nome ?? '');
-  late CategoriaInsumo _categoria = widget.insumo?.categoria ?? CategoriaInsumo.insumo;
-  late String? _unidadeCompra = _normalizarUnidade(widget.insumo?.unidadeCompra);
+  late final _nomeController = TextEditingController(
+    text: widget.insumo?.nome ?? '',
+  );
+  late CategoriaInsumo _categoria =
+      widget.insumo?.categoria ?? CategoriaInsumo.insumo;
+  late String? _unidadeCompra = _normalizarUnidade(
+    widget.insumo?.unidadeCompra,
+  );
   late String? _unidadeUso = _normalizarUnidade(widget.insumo?.unidadeUso);
   late String? _emoji = widget.insumo?.emoji;
   late final _fatorController = TextEditingController(
     text: widget.insumo == null
         ? ''
-        : (widget.insumo!.fatorConversao % 1.0 == 0.0
-            ? widget.insumo!.fatorConversao.toInt().toString()
-            : widget.insumo!.fatorConversao.toString().replaceAll('.', ',')),
+        : _formatarNumero(widget.insumo!.fatorConversao),
   );
   late final _custoController = TextEditingController(
     text: (widget.insumo?.custoAtual ?? 0) > 0
@@ -111,11 +112,26 @@ class _InsumoFormDialogState extends State<InsumoFormDialog> {
     super.dispose();
   }
 
+  static String _formatarNumero(double valor) {
+    return valor % 1.0 == 0.0
+        ? valor.toInt().toString()
+        : valor.toString().replaceAll('.', ',');
+  }
+
+  void _preencherFatorObvio() {
+    final compra = _unidadeCompra;
+    final uso = _unidadeUso;
+    if (compra == null || uso == null) return;
+    final fator = fatorConversaoObvio(compra, uso);
+    if (fator != null) _fatorController.text = _formatarNumero(fator);
+  }
+
   @override
   Widget build(BuildContext context) {
     final fatorVal = parseDecimalPtBr(_fatorController.text);
-    final custoVal = parseDecimalPtBr(_custoController.text);
-    final isValid = _nomeController.text.trim().isNotEmpty &&
+    final custoVal = parseMoedaPtBr(_custoController.text);
+    final isValid =
+        _nomeController.text.trim().isNotEmpty &&
         _unidadeCompra != null &&
         _unidadeUso != null &&
         fatorVal != null &&
@@ -123,54 +139,32 @@ class _InsumoFormDialogState extends State<InsumoFormDialog> {
         (_custoController.text.trim().isEmpty || custoVal != null);
 
     return Padding(
-      padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
+      padding: EdgeInsets.only(
+        bottom: MediaQuery.of(context).viewInsets.bottom,
+      ),
       child: SingleChildScrollView(
         padding: const EdgeInsets.fromLTRB(20, 12, 20, 20),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            Center(
-              child: Container(
-                width: 40,
-                height: 4,
-                decoration: BoxDecoration(
-                  color: outlineLight,
-                  borderRadius: BorderRadius.circular(4),
-                ),
-              ),
-            ),
-            const SizedBox(height: 12),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                TextButton(
-                  onPressed: () => Navigator.of(context).pop(),
-                  child: const Text('Cancelar'),
-                ),
-                Text(widget.insumo == null ? 'Novo Insumo' : 'Editar Insumo',
-                    style: Theme.of(context)
-                        .textTheme
-                        .titleMedium
-                        ?.copyWith(fontWeight: FontWeight.w600)),
-                TextButton(
-                  onPressed: isValid
-                      ? () {
-                          widget.onConfirm(
-                            nome: _nomeController.text.trim(),
-                            categoria: _categoria,
-                            unidadeCompra: _unidadeCompra!,
-                            unidadeUso: _unidadeUso!,
-                            fatorConversao: fatorVal,
-                            custoAtual: custoVal ?? 0.0,
-                            emoji: _emoji,
-                          );
-                          Navigator.of(context).pop();
-                        }
-                      : null,
-                  child: const Text('Salvar'),
-                ),
-              ],
+            FormSheetHeader(
+              titulo: widget.insumo == null ? 'Novo Insumo' : 'Editar Insumo',
+              onCancelar: () => Navigator.of(context).pop(),
+              onSalvar: isValid
+                  ? () {
+                      widget.onConfirm(
+                        nome: _nomeController.text.trim(),
+                        categoria: _categoria,
+                        unidadeCompra: _unidadeCompra!,
+                        unidadeUso: _unidadeUso!,
+                        fatorConversao: fatorVal,
+                        custoAtual: custoVal ?? 0.0,
+                        emoji: _emoji,
+                      );
+                      Navigator.of(context).pop();
+                    }
+                  : null,
             ),
             const SizedBox(height: 8),
             TextField(
@@ -183,7 +177,10 @@ class _InsumoFormDialogState extends State<InsumoFormDialog> {
               onChanged: (_) => setState(() {}),
             ),
             const SizedBox(height: 12),
-            Text('Ícone (opcional)', style: Theme.of(context).textTheme.labelMedium),
+            Text(
+              'Ícone (opcional)',
+              style: Theme.of(context).textTheme.labelMedium,
+            ),
             const SizedBox(height: 8),
             EmojiPickerField(
               opcoes: emojisInsumo,
@@ -209,6 +206,16 @@ class _InsumoFormDialogState extends State<InsumoFormDialog> {
               ],
             ),
             const SizedBox(height: 12),
+            const RotuloComAjuda(
+              rotulo: 'Unidades',
+              titulo: 'Unidade de compra e de uso',
+              explicacao:
+                  'A unidade de COMPRA é como o produto vem do fornecedor '
+                  '(o quilo, a caixa, o fardo). A unidade de USO é como ele '
+                  'entra na receita (gramas, ml, unidades).\n\n'
+                  'Podem ser iguais — ovo você compra e usa por unidade.',
+              exemplo: 'Farinha: compra em kg, usa em g.',
+            ),
             Row(
               children: [
                 Expanded(
@@ -218,7 +225,10 @@ class _InsumoFormDialogState extends State<InsumoFormDialog> {
                     decoration: const InputDecoration(labelText: 'Un. compra'),
                     hint: const Text('Selecionar'),
                     items: _itensUnidade(_unidadeCompra),
-                    onChanged: (v) => setState(() => _unidadeCompra = v),
+                    onChanged: (v) => setState(() {
+                      _unidadeCompra = v;
+                      _preencherFatorObvio();
+                    }),
                   ),
                 ),
                 const SizedBox(width: 12),
@@ -229,7 +239,10 @@ class _InsumoFormDialogState extends State<InsumoFormDialog> {
                     decoration: const InputDecoration(labelText: 'Un. uso'),
                     hint: const Text('Selecionar'),
                     items: _itensUnidade(_unidadeUso),
-                    onChanged: (v) => setState(() => _unidadeUso = v),
+                    onChanged: (v) => setState(() {
+                      _unidadeUso = v;
+                      _preencherFatorObvio();
+                    }),
                   ),
                 ),
               ],
@@ -239,21 +252,48 @@ class _InsumoFormDialogState extends State<InsumoFormDialog> {
               controller: _fatorController,
               decoration: const InputDecoration(
                 labelText: 'Fator de conversão',
-                hintText: 'Ex.: 1000 (1 kg = 1000 g)',
-                helperText: 'Quantas unidades de uso cabem em 1 unidade de compra',
+                hintText: 'Ex.: 1000',
+                helperText:
+                    'Quantas unidades de uso cabem em 1 unidade de compra',
+                suffixIcon: AjudaIconButton(
+                  titulo: 'Fator de conversão',
+                  explicacao:
+                      'Quantas unidades de USO cabem em 1 unidade de COMPRA. '
+                      'É o que permite ao app saber quanto custa a grama a '
+                      'partir do preço do quilo.\n\n'
+                      'Se você compra e usa na mesma unidade, o fator é 1.',
+                  exemplo:
+                      '1 kg de farinha = 1000 g → fator 1000.\n'
+                      '1 caixa com 30 ovos = 30 un → fator 30.',
+                ),
               ),
-              keyboardType: const TextInputType.numberWithOptions(decimal: true),
+              keyboardType: const TextInputType.numberWithOptions(
+                decimal: true,
+              ),
               onChanged: (_) => setState(() {}),
             ),
             const SizedBox(height: 12),
             TextField(
               controller: _custoController,
+              inputFormatters: const [MoedaInputFormatter()],
               decoration: const InputDecoration(
+                prefixText: 'R\$ ',
                 labelText: 'Custo por un. de compra (opcional)',
-                hintText: 'Ex.: 46,18',
-                helperText: 'Atualizado automaticamente pelas compras finalizadas',
+                hintText: '0,00',
+                helperText:
+                    'Atualizado automaticamente pelas compras finalizadas',
+                suffixIcon: AjudaIconButton(
+                  titulo: 'Custo por unidade de compra',
+                  explicacao:
+                      'Quanto você paga na unidade em que COMPRA — o preço do '
+                      'quilo, da caixa, do fardo. Não é o preço da grama.\n\n'
+                      'Pode deixar em branco: ao finalizar uma lista de '
+                      'compras, o app preenche sozinho com o que você pagou.',
+                  exemplo:
+                      'Comprou o kg de calabresa por R\$ 46,18 → informe 46,18.',
+                ),
               ),
-              keyboardType: const TextInputType.numberWithOptions(decimal: true),
+              keyboardType: TextInputType.number,
               onChanged: (_) => setState(() {}),
             ),
           ],

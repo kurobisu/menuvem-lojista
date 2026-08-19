@@ -40,8 +40,9 @@ class Componente {
     return Componente(
       id: id ?? this.id,
       nome: nome ?? this.nome,
-      tipoComponenteId:
-          clearTipoComponenteId ? null : (tipoComponenteId ?? this.tipoComponenteId),
+      tipoComponenteId: clearTipoComponenteId
+          ? null
+          : (tipoComponenteId ?? this.tipoComponenteId),
       ordem: ordem ?? this.ordem,
       emoji: clearEmoji ? null : (emoji ?? this.emoji),
       dataCriacao: dataCriacao,

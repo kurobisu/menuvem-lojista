@@ -13,11 +13,17 @@ class ProdutoComponenteCompleto {
   final List<ItemComponenteComInsumo> itens;
   final String? tipoNome;
 
+  /// Nome do tamanho aplicado (`vinculo.tamanhoComponenteId`). Null só se o
+  /// tamanho foi excluído e o vínculo ficou órfão (não deveria acontecer —
+  /// a FK é `on delete cascade`, o vínculo some junto).
+  final String? tamanhoNome;
+
   const ProdutoComponenteCompleto({
     required this.vinculo,
     required this.componente,
     required this.itens,
     this.tipoNome,
+    this.tamanhoNome,
   });
 
   double get custo =>

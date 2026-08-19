@@ -5,6 +5,7 @@ import 'package:intl/intl.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'config/env.dart';
+import 'presentation/components/tutorial/tutorial_overlay.dart';
 import 'providers/session_providers.dart';
 import 'router/app_router.dart';
 import 'theme/app_theme.dart';
@@ -13,10 +14,7 @@ Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await initializeDateFormatting('pt_BR');
   Intl.defaultLocale = 'pt_BR';
-  await Supabase.initialize(
-    url: Env.supabaseUrl,
-    anonKey: Env.supabaseAnonKey,
-  );
+  await Supabase.initialize(url: Env.supabaseUrl, anonKey: Env.supabaseAnonKey);
   runApp(const ProviderScope(child: MenuvemLojistaApp()));
 }
 
@@ -35,6 +33,11 @@ class MenuvemLojistaApp extends ConsumerWidget {
       debugShowCheckedModeBanner: false,
       theme: menuvemLojistaTheme(),
       routerConfig: router,
+      // O overlay do tutorial vive acima de qualquer rota, para poder
+      // destacar widgets da tela atual sem cada tela precisar hospedá-lo.
+      builder: (context, child) => Stack(
+        children: [child ?? const SizedBox.shrink(), const TutorialOverlay()],
+      ),
     );
   }
 }

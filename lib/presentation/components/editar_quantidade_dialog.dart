@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import 'campo_com_ajuda.dart';
 import 'formatters.dart';
 
 /// Diálogo genérico de edição de quantidade + perda de um item de ficha
@@ -47,7 +48,8 @@ class _EditarQuantidadeDialogState extends State<EditarQuantidadeDialog> {
   Widget build(BuildContext context) {
     final quantidadeVal = parseDecimalPtBr(_quantidadeController.text);
     final perdaVal = parseDecimalPtBr(_perdaController.text);
-    final isValid = quantidadeVal != null &&
+    final isValid =
+        quantidadeVal != null &&
         quantidadeVal > 0 &&
         perdaVal != null &&
         perdaVal >= 0 &&
@@ -60,14 +62,33 @@ class _EditarQuantidadeDialogState extends State<EditarQuantidadeDialog> {
         children: [
           TextField(
             controller: _quantidadeController,
-            decoration: InputDecoration(labelText: 'Quantidade (${widget.unidadeUso})'),
+            decoration: InputDecoration(
+              labelText: 'Quantidade (${widget.unidadeUso})',
+            ),
+            inputFormatters: [decimalPtBrInputFormatter],
             keyboardType: const TextInputType.numberWithOptions(decimal: true),
             onChanged: (_) => setState(() {}),
           ),
           const SizedBox(height: 12),
           TextField(
             controller: _perdaController,
-            decoration: const InputDecoration(labelText: 'Perda (%)'),
+            decoration: const InputDecoration(
+              labelText: 'Perda (%)',
+              suffixIcon: AjudaIconButton(
+                titulo: 'Perda no preparo',
+                explicacao:
+                    'Quanto do insumo se perde entre o que você compra e o '
+                    'que sobra no prato: casca, osso, gordura, aparas, '
+                    'evaporação.\n\n'
+                    'O app encarece a porção na mesma proporção, porque você '
+                    'paga pelo que comprou, não pelo que aproveitou. Deixe 0 '
+                    'quando não há perda.',
+                exemplo:
+                    '1 kg de tomate com 20% de perda rende 800 g — usar 800 g '
+                    'custa o preço de 1 kg.',
+              ),
+            ),
+            inputFormatters: [decimalPtBrInputFormatter],
             keyboardType: const TextInputType.numberWithOptions(decimal: true),
             onChanged: (_) => setState(() {}),
           ),

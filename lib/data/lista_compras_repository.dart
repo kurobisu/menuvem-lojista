@@ -79,17 +79,20 @@ class ListaComprasRepository {
     return row['id'] as int;
   }
 
-  Future<void> updateLista(ListaCompras lista) {
-    return _client.from(_tableListas).update({
-      'nome': lista.nome,
-      'status': lista.status.name.toUpperCase(),
-      'total_gasto': lista.totalGasto,
-      'data_finalizacao': lista.dataFinalizacao?.toUtc().toIso8601String(),
-    }).eq('id', lista.id);
+  Future<void> updateLista(ListaCompras lista) async {
+    await _client
+        .from(_tableListas)
+        .update({
+          'nome': lista.nome,
+          'status': lista.status.name.toUpperCase(),
+          'total_gasto': lista.totalGasto,
+          'data_finalizacao': lista.dataFinalizacao?.toUtc().toIso8601String(),
+        })
+        .eq('id', lista.id);
   }
 
-  Future<void> deleteLista(ListaCompras lista) {
-    return _client.from(_tableListas).delete().eq('id', lista.id);
+  Future<void> deleteLista(ListaCompras lista) async {
+    await _client.from(_tableListas).delete().eq('id', lista.id);
   }
 
   // ── Itens ────────────────────────────────────────────────────────────────
@@ -112,25 +115,25 @@ class ListaComprasRepository {
     return row['id'] as int;
   }
 
-  Future<void> updateItem(ItemLista item) {
-    return _client
+  Future<void> updateItem(ItemLista item) async {
+    await _client
         .from(_tableItens)
         .update(_itemListaToInsertRow(item))
         .eq('id', item.id);
   }
 
-  Future<void> deleteItem(ItemLista item) {
-    return _client.from(_tableItens).delete().eq('id', item.id);
+  Future<void> deleteItem(ItemLista item) async {
+    await _client.from(_tableItens).delete().eq('id', item.id);
   }
 
   Future<void> toggleItemComprado(
     int itemId,
     bool comprado,
     double precoUnitario,
-  ) {
-    return _client.from(_tableItens).update({
-      'comprado': comprado,
-      'preco_unitario': precoUnitario,
-    }).eq('id', itemId);
+  ) async {
+    await _client
+        .from(_tableItens)
+        .update({'comprado': comprado, 'preco_unitario': precoUnitario})
+        .eq('id', itemId);
   }
 }

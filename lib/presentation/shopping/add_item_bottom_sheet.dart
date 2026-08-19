@@ -16,7 +16,8 @@ class AddItemBottomSheet extends ConsumerStatefulWidget {
     required String unidade,
     double precoUnitario,
     Insumo? insumo,
-  }) onAdd;
+  })
+  onAdd;
 
   @override
   ConsumerState<AddItemBottomSheet> createState() => _AddItemBottomSheetState();
@@ -41,7 +42,8 @@ class _AddItemBottomSheetState extends ConsumerState<AddItemBottomSheet> {
   @override
   Widget build(BuildContext context) {
     final quantidade = parseDecimalPtBr(_quantidadeController.text);
-    final isValid = (_selectedInsumo != null || _nomeController.text.trim().isNotEmpty) &&
+    final isValid =
+        (_selectedInsumo != null || _nomeController.text.trim().isNotEmpty) &&
         quantidade != null &&
         quantidade > 0;
     final searchAsync = _selectedInsumo == null
@@ -62,10 +64,9 @@ class _AddItemBottomSheetState extends ConsumerState<AddItemBottomSheet> {
           Center(
             child: Text(
               'Adicionar Item',
-              style: Theme.of(context)
-                  .textTheme
-                  .titleMedium
-                  ?.copyWith(fontWeight: FontWeight.w600),
+              style: Theme.of(
+                context,
+              ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600),
             ),
           ),
           const SizedBox(height: 12),
@@ -78,7 +79,8 @@ class _AddItemBottomSheetState extends ConsumerState<AddItemBottomSheet> {
                 suffixIcon: _nomeController.text.isNotEmpty
                     ? IconButton(
                         icon: const Icon(Icons.clear),
-                        onPressed: () => setState(() => _nomeController.clear()),
+                        onPressed: () =>
+                            setState(() => _nomeController.clear()),
                       )
                     : null,
               ),
@@ -96,7 +98,9 @@ class _AddItemBottomSheetState extends ConsumerState<AddItemBottomSheet> {
                           children: results
                               .map(
                                 (insumo) => ListTile(
-                                  leading: const Icon(Icons.shopping_cart_outlined),
+                                  leading: const Icon(
+                                    Icons.shopping_cart_outlined,
+                                  ),
                                   title: Text(insumo.nome),
                                   subtitle: Text(
                                     '${insumo.unidadeCompra} · R\$ ${formatarMoeda(insumo.custoAtual)}',
@@ -105,9 +109,11 @@ class _AddItemBottomSheetState extends ConsumerState<AddItemBottomSheet> {
                                     setState(() {
                                       _selectedInsumo = insumo;
                                       _nomeController.text = insumo.nome;
-                                      _unidadeController.text = insumo.unidadeCompra;
-                                      _precoController.text = insumo.custoAtual > 0
-                                          ? insumo.custoAtual.toString()
+                                      _unidadeController.text =
+                                          insumo.unidadeCompra;
+                                      _precoController.text =
+                                          insumo.custoAtual > 0
+                                          ? formatarMoeda(insumo.custoAtual)
                                           : '';
                                     });
                                   },
@@ -124,7 +130,9 @@ class _AddItemBottomSheetState extends ConsumerState<AddItemBottomSheet> {
               child: ListTile(
                 leading: const Icon(Icons.shopping_cart_outlined),
                 title: Text(_selectedInsumo!.nome),
-                subtitle: Text('Insumo cadastrado · ${_selectedInsumo!.unidadeCompra}'),
+                subtitle: Text(
+                  'Insumo cadastrado · ${_selectedInsumo!.unidadeCompra}',
+                ),
                 trailing: IconButton(
                   icon: const Icon(Icons.close),
                   onPressed: () => setState(() {
@@ -142,7 +150,10 @@ class _AddItemBottomSheetState extends ConsumerState<AddItemBottomSheet> {
                 child: TextField(
                   controller: _quantidadeController,
                   decoration: const InputDecoration(labelText: 'Qtd'),
-                  keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                  inputFormatters: [decimalPtBrInputFormatter],
+                  keyboardType: const TextInputType.numberWithOptions(
+                    decimal: true,
+                  ),
                   onChanged: (_) => setState(() {}),
                 ),
               ),
@@ -163,8 +174,12 @@ class _AddItemBottomSheetState extends ConsumerState<AddItemBottomSheet> {
                 flex: 2,
                 child: TextField(
                   controller: _precoController,
-                  decoration: const InputDecoration(labelText: 'R\$ Preço'),
-                  keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                  inputFormatters: const [MoedaInputFormatter()],
+                  decoration: const InputDecoration(
+                    prefixText: 'R\$ ',
+                    labelText: 'Preço',
+                  ),
+                  keyboardType: TextInputType.number,
                 ),
               ),
             ],
@@ -173,11 +188,14 @@ class _AddItemBottomSheetState extends ConsumerState<AddItemBottomSheet> {
           FilledButton.icon(
             onPressed: isValid
                 ? () {
-                    final preco = parseDecimalPtBr(_precoController.text) ?? 0.0;
+                    final preco =
+                        parseMoedaPtBr(_precoController.text) ?? 0.0;
                     widget.onAdd(
                       nomeItem: _selectedInsumo?.nome ?? _nomeController.text,
                       quantidade: quantidade,
-                      unidade: _selectedInsumo?.unidadeCompra ?? _unidadeController.text,
+                      unidade:
+                          _selectedInsumo?.unidadeCompra ??
+                          _unidadeController.text,
                       precoUnitario: preco,
                       insumo: _selectedInsumo,
                     );

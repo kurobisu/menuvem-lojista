@@ -36,10 +36,9 @@ class TendenciaIndicador extends StatelessWidget {
             const SizedBox(width: 4),
             Text(
               label,
-              style: Theme.of(context)
-                  .textTheme
-                  .labelSmall
-                  ?.copyWith(color: cor),
+              style: Theme.of(
+                context,
+              ).textTheme.labelSmall?.copyWith(color: cor),
             ),
           ],
         ],

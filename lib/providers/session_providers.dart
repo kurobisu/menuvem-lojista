@@ -58,7 +58,8 @@ final tokenSyncProvider = Provider<void>((ref) {
   final contasSalvas = ref.watch(contasSalvasRepositoryProvider);
 
   final subscription = authRepository.authStateChanges.listen((estado) {
-    final relevante = estado.event == AuthChangeEvent.tokenRefreshed ||
+    final relevante =
+        estado.event == AuthChangeEvent.tokenRefreshed ||
         estado.event == AuthChangeEvent.signedIn;
     if (!relevante) return;
 

@@ -27,7 +27,9 @@ class ItemListaCard extends StatefulWidget {
 
 class _ItemListaCardState extends State<ItemListaCard> {
   late final _precoController = TextEditingController(
-    text: widget.item.precoUnitario > 0 ? widget.item.precoUnitario.toString() : '',
+    text: widget.item.precoUnitario > 0
+        ? formatarMoeda(widget.item.precoUnitario)
+        : '',
   );
 
   @override
@@ -48,7 +50,9 @@ class _ItemListaCardState extends State<ItemListaCard> {
     final colorScheme = Theme.of(context).colorScheme;
 
     return Card(
-      color: item.comprado ? colorScheme.surfaceContainerHighest.withValues(alpha: 0.6) : null,
+      color: item.comprado
+          ? colorScheme.surfaceContainerHighest.withValues(alpha: 0.6)
+          : null,
       elevation: item.comprado ? 0 : 2,
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
@@ -57,7 +61,7 @@ class _ItemListaCardState extends State<ItemListaCard> {
             Checkbox(
               value: item.comprado,
               onChanged: (checked) {
-                final preco = parseDecimalPtBr(_precoController.text) ?? 0.0;
+                final preco = parseMoedaPtBr(_precoController.text) ?? 0.0;
                 widget.onToggle(checked ?? false, preco);
               },
             ),
@@ -73,7 +77,8 @@ class _ItemListaCardState extends State<ItemListaCard> {
                           item.nomeItem,
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
-                          style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                          style: Theme.of(context).textTheme.titleSmall
+                              ?.copyWith(
                                 decoration: item.comprado
                                     ? TextDecoration.lineThrough
                                     : null,
@@ -107,10 +112,9 @@ class _ItemListaCardState extends State<ItemListaCard> {
                   const SizedBox(height: 2),
                   Text(
                     '${_formatarNumero(item.quantidade)} ${item.unidade}',
-                    style: Theme.of(context)
-                        .textTheme
-                        .bodySmall
-                        ?.copyWith(color: colorScheme.onSurfaceVariant),
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                      color: colorScheme.onSurfaceVariant,
+                    ),
                   ),
                 ],
               ),
@@ -121,10 +125,14 @@ class _ItemListaCardState extends State<ItemListaCard> {
                 width: 90,
                 child: TextField(
                   controller: _precoController,
-                  decoration: const InputDecoration(labelText: 'R\$', isDense: true),
+                  inputFormatters: const [MoedaInputFormatter()],
+                  decoration: const InputDecoration(
+                    labelText: 'R\$',
+                    isDense: true,
+                  ),
                   style: Theme.of(context).textTheme.bodySmall,
-                  keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                )
+                  keyboardType: TextInputType.number,
+                ),
               )
             else
               Column(
@@ -132,17 +140,15 @@ class _ItemListaCardState extends State<ItemListaCard> {
                 children: [
                   Text(
                     'R\$ ${formatarMoeda(item.precoUnitario)}',
-                    style: Theme.of(context)
-                        .textTheme
-                        .bodySmall
-                        ?.copyWith(color: colorScheme.onSurfaceVariant),
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                      color: colorScheme.onSurfaceVariant,
+                    ),
                   ),
                   Text(
                     '= R\$ ${formatarMoeda(item.precoTotal)}',
-                    style: Theme.of(context)
-                        .textTheme
-                        .labelMedium
-                        ?.copyWith(color: colorScheme.primary),
+                    style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                      color: colorScheme.primary,
+                    ),
                   ),
                 ],
               ),
@@ -176,7 +182,10 @@ class _ItemListaCardState extends State<ItemListaCard> {
               Navigator.of(context).pop();
               widget.onDelete();
             },
-            child: Text('Remover', style: TextStyle(color: Theme.of(context).colorScheme.error)),
+            child: Text(
+              'Remover',
+              style: TextStyle(color: Theme.of(context).colorScheme.error),
+            ),
           ),
         ],
       ),

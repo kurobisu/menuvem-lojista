@@ -39,6 +39,8 @@ final listaComprasRepositoryProvider = Provider<ListaComprasRepository>((ref) {
   return ListaComprasRepository(ref.watch(supabaseClientProvider));
 });
 
-final historicoPrecoRepositoryProvider = Provider<HistoricoPrecoRepository>((ref) {
+final historicoPrecoRepositoryProvider = Provider<HistoricoPrecoRepository>((
+  ref,
+) {
   return HistoricoPrecoRepository(ref.watch(supabaseClientProvider));
 });

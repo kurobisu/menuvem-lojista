@@ -102,14 +102,17 @@ class AuthController extends Notifier<AuthUiState> {
   Future<String?> entrarComContaSalva(ContaSalva conta) async {
     state = state.copyWith(isLoading: true, clearError: true, clearAviso: true);
     try {
-      await ref.read(authRepositoryProvider).entrarComRefreshToken(conta.refreshToken);
+      await ref
+          .read(authRepositoryProvider)
+          .entrarComRefreshToken(conta.refreshToken);
       await _salvarContaSeMarcado();
       state = state.copyWith(isLoading: false);
       return null;
     } catch (_) {
       state = state.copyWith(
         isLoading: false,
-        error: 'A sessão salva de ${conta.email} expirou. Digite a senha para entrar de novo.',
+        error:
+            'A sessão salva de ${conta.email} expirou. Digite a senha para entrar de novo.',
       );
       // devolve o e-mail para a tela preencher o campo
       return conta.email;
@@ -146,7 +149,8 @@ class AuthController extends Notifier<AuthUiState> {
       await ref.read(authRepositoryProvider).enviarResetDeSenha(email);
       state = state.copyWith(
         isLoading: false,
-        aviso: 'E-mail de recuperação enviado para $email. Verifique a caixa de entrada e o spam.',
+        aviso:
+            'E-mail de recuperação enviado para $email. Verifique a caixa de entrada e o spam.',
       );
     } catch (e) {
       state = state.copyWith(isLoading: false, error: _traduzirErro(e));

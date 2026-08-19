@@ -69,21 +69,18 @@ class InsumoRepository {
     return row['id'] as int;
   }
 
-  Future<void> updateInsumo(Insumo insumo) {
-    return _client.from(_table).update(_insumoToInsertRow(insumo)).eq(
-          'id',
-          insumo.id,
-        );
+  Future<void> updateInsumo(Insumo insumo) async {
+    await _client
+        .from(_table)
+        .update(_insumoToInsertRow(insumo))
+        .eq('id', insumo.id);
   }
 
-  Future<void> updateCustoInsumo(int id, double novoCusto) {
-    return _client.from(_table).update({'custo_atual': novoCusto}).eq(
-          'id',
-          id,
-        );
+  Future<void> updateCustoInsumo(int id, double novoCusto) async {
+    await _client.from(_table).update({'custo_atual': novoCusto}).eq('id', id);
   }
 
-  Future<void> deleteInsumo(Insumo insumo) {
-    return _client.from(_table).delete().eq('id', insumo.id);
+  Future<void> deleteInsumo(Insumo insumo) async {
+    await _client.from(_table).delete().eq('id', insumo.id);
   }
 }

@@ -4,8 +4,10 @@ import 'package:intl/intl.dart';
 
 import '../../domain/model/lista_compras.dart';
 import '../../theme/app_theme.dart';
+import '../components/back_or_home_button.dart';
 import '../components/empty_state.dart';
 import '../components/formatters.dart';
+import '../components/responsive.dart';
 import 'add_item_bottom_sheet.dart';
 import 'item_lista_card.dart';
 import 'shopping_list_controller.dart';
@@ -22,6 +24,7 @@ class ShoppingListScreen extends ConsumerWidget {
 
     return Scaffold(
       appBar: AppBar(
+        leading: const BackOrHomeButton(),
         title: dataAsync.maybeWhen(
           data: (d) => Text(d.lista?.nome ?? 'Lista de Compras'),
           orElse: () => const Text('Lista de Compras'),
@@ -40,7 +43,12 @@ class ShoppingListScreen extends ConsumerWidget {
                     heroTag: 'finish',
                     backgroundColor: successGreen,
                     foregroundColor: Colors.white,
-                    onPressed: () => _showFinishDialog(context, ref, actions, data.itensComprados),
+                    onPressed: () => _showFinishDialog(
+                      context,
+                      ref,
+                      actions,
+                      data.itensComprados,
+                    ),
                     child: const Icon(Icons.done),
                   ),
                 ),
@@ -48,24 +56,23 @@ class ShoppingListScreen extends ConsumerWidget {
                 heroTag: 'add',
                 backgroundColor: yellowSecondary,
                 foregroundColor: Colors.white,
-                onPressed: () => showModalBottomSheet<void>(
-                  context: context,
-                  isScrollControlled: true,
+                onPressed: () => showResponsiveFormSheet<void>(
+                  context,
                   builder: (_) => AddItemBottomSheet(
-                    onAdd: ({
-                      required nomeItem,
-                      required quantidade,
-                      required unidade,
-                      precoUnitario = 0.0,
-                      insumo,
-                    }) =>
-                        actions.addItem(
-                      nomeItem: nomeItem,
-                      quantidade: quantidade,
-                      unidade: unidade,
-                      precoUnitario: precoUnitario,
-                      insumo: insumo,
-                    ),
+                    onAdd:
+                        ({
+                          required nomeItem,
+                          required quantidade,
+                          required unidade,
+                          precoUnitario = 0.0,
+                          insumo,
+                        }) => actions.addItem(
+                          nomeItem: nomeItem,
+                          quantidade: quantidade,
+                          unidade: unidade,
+                          precoUnitario: precoUnitario,
+                          insumo: insumo,
+                        ),
                   ),
                 ),
                 child: const Icon(Icons.add),
@@ -75,70 +82,93 @@ class ShoppingListScreen extends ConsumerWidget {
         },
         orElse: () => null,
       ),
-      body: dataAsync.when(
-        loading: () => const Center(child: CircularProgressIndicator(color: purplePrimary)),
-        error: (e, _) => Center(child: Text('Erro: $e')),
-        data: (data) {
-          if (data.itens.isEmpty) {
-            return const EmptyState(
-              icon: Icons.shopping_cart_outlined,
-              title: 'Lista vazia',
-              subtitle: 'Toque em + para adicionar os primeiros itens',
-            );
-          }
-          final pendentes = data.itens.where((i) => !i.comprado).toList();
-          final comprados = data.itens.where((i) => i.comprado).toList();
-          return Column(
-            children: [
-              _HeaderResumo(lista: data.lista, comprados: data.itensComprados, total: data.totalItens, totalGasto: data.totalGasto),
-              Expanded(
-                child: ListView(
-                  padding: const EdgeInsets.fromLTRB(12, 8, 12, 100),
-                  children: [
-                    if (pendentes.isNotEmpty) ...[
-                      Padding(
-                        padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 4),
-                        child: Text('A comprar (${pendentes.length})',
-                            style: Theme.of(context).textTheme.labelMedium),
-                      ),
-                      ...pendentes.map(
-                        (item) => Padding(
-                          padding: const EdgeInsets.only(bottom: 6),
-                          child: ItemListaCard(
-                            item: item,
-                            tendencia: item.insumoId != null ? data.tendencias[item.insumoId] : null,
-                            onToggle: (checked, preco) =>
-                                actions.toggleItem(item.id, checked, preco),
-                            onDelete: () => actions.deleteItem(item),
-                          ),
-                        ),
-                      ),
-                    ],
-                    if (comprados.isNotEmpty) ...[
-                      Padding(
-                        padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 4),
-                        child: Text('Comprados (${comprados.length})',
-                            style: Theme.of(context).textTheme.labelMedium),
-                      ),
-                      ...comprados.map(
-                        (item) => Padding(
-                          padding: const EdgeInsets.only(bottom: 6),
-                          child: ItemListaCard(
-                            item: item,
-                            tendencia: item.insumoId != null ? data.tendencias[item.insumoId] : null,
-                            onToggle: (checked, preco) =>
-                                actions.toggleItem(item.id, checked, preco),
-                            onDelete: () => actions.deleteItem(item),
-                          ),
-                        ),
-                      ),
-                    ],
-                  ],
+      body: MaxWidthCenter(
+        child: dataAsync.when(
+          loading: () => const Center(
+            child: CircularProgressIndicator(color: purplePrimary),
+          ),
+          error: (e, _) => Center(child: Text('Erro: $e')),
+          data: (data) {
+            if (data.itens.isEmpty) {
+              return const EmptyState(
+                icon: Icons.shopping_cart_outlined,
+                title: 'Lista vazia',
+                subtitle: 'Toque em + para adicionar os primeiros itens',
+              );
+            }
+            final pendentes = data.itens.where((i) => !i.comprado).toList();
+            final comprados = data.itens.where((i) => i.comprado).toList();
+            return Column(
+              children: [
+                _HeaderResumo(
+                  lista: data.lista,
+                  comprados: data.itensComprados,
+                  total: data.totalItens,
+                  totalGasto: data.totalGasto,
                 ),
-              ),
-            ],
-          );
-        },
+                Expanded(
+                  child: ListView(
+                    padding: const EdgeInsets.fromLTRB(12, 8, 12, 100),
+                    children: [
+                      if (pendentes.isNotEmpty) ...[
+                        Padding(
+                          padding: const EdgeInsets.symmetric(
+                            vertical: 4,
+                            horizontal: 4,
+                          ),
+                          child: Text(
+                            'A comprar (${pendentes.length})',
+                            style: Theme.of(context).textTheme.labelMedium,
+                          ),
+                        ),
+                        ...pendentes.map(
+                          (item) => Padding(
+                            padding: const EdgeInsets.only(bottom: 6),
+                            child: ItemListaCard(
+                              item: item,
+                              tendencia: item.insumoId != null
+                                  ? data.tendencias[item.insumoId]
+                                  : null,
+                              onToggle: (checked, preco) =>
+                                  actions.toggleItem(item.id, checked, preco),
+                              onDelete: () => actions.deleteItem(item),
+                            ),
+                          ),
+                        ),
+                      ],
+                      if (comprados.isNotEmpty) ...[
+                        Padding(
+                          padding: const EdgeInsets.symmetric(
+                            vertical: 4,
+                            horizontal: 4,
+                          ),
+                          child: Text(
+                            'Comprados (${comprados.length})',
+                            style: Theme.of(context).textTheme.labelMedium,
+                          ),
+                        ),
+                        ...comprados.map(
+                          (item) => Padding(
+                            padding: const EdgeInsets.only(bottom: 6),
+                            child: ItemListaCard(
+                              item: item,
+                              tendencia: item.insumoId != null
+                                  ? data.tendencias[item.insumoId]
+                                  : null,
+                              onToggle: (checked, preco) =>
+                                  actions.toggleItem(item.id, checked, preco),
+                              onDelete: () => actions.deleteItem(item),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ],
+                  ),
+                ),
+              ],
+            );
+          },
+        ),
       ),
     );
   }
@@ -151,7 +181,8 @@ class ShoppingListScreen extends ConsumerWidget {
   ) {
     showDialog<void>(
       context: context,
-      builder: (context) => _FinishDialog(itensComprados: itensComprados, actions: actions),
+      builder: (context) =>
+          _FinishDialog(itensComprados: itensComprados, actions: actions),
     );
   }
 }
@@ -202,7 +233,10 @@ class _FinishDialogState extends State<_FinishDialog> {
               ? const SizedBox(
                   width: 20,
                   height: 20,
-                  child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                    color: Colors.white,
+                  ),
                 )
               : const Text('Finalizar'),
         ),
@@ -243,10 +277,9 @@ class _HeaderResumo extends StatelessWidget {
           if (lista != null)
             Text(
               formatter.format(lista!.dataCriacao),
-              style: Theme.of(context)
-                  .textTheme
-                  .bodySmall
-                  ?.copyWith(color: Colors.white.withValues(alpha: 0.75)),
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                color: Colors.white.withValues(alpha: 0.75),
+              ),
             ),
           if (lista?.status == StatusLista.finalizada)
             Container(
@@ -261,7 +294,10 @@ class _HeaderResumo extends StatelessWidget {
                 children: [
                   Icon(Icons.check_circle, size: 14, color: Colors.white),
                   SizedBox(width: 4),
-                  Text('Finalizada', style: TextStyle(color: Colors.white, fontSize: 12)),
+                  Text(
+                    'Finalizada',
+                    style: TextStyle(color: Colors.white, fontSize: 12),
+                  ),
                 ],
               ),
             ),
@@ -275,17 +311,16 @@ class _HeaderResumo extends StatelessWidget {
                 children: [
                   Text(
                     '$comprados de $total itens',
-                    style: Theme.of(context)
-                        .textTheme
-                        .bodySmall
-                        ?.copyWith(color: Colors.white.withValues(alpha: 0.8)),
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                      color: Colors.white.withValues(alpha: 0.8),
+                    ),
                   ),
                   Text(
                     'R\$ ${formatarMoeda(totalGasto)}',
                     style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                          color: Colors.white,
-                          fontWeight: FontWeight.bold,
-                        ),
+                      color: Colors.white,
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
                 ],
               ),

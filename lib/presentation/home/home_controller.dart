@@ -3,6 +3,8 @@ import 'package:rxdart/rxdart.dart';
 
 import '../../domain/model/insumo.dart';
 import '../../domain/model/lista_compras.dart';
+import '../../domain/model/porcao_com_custo.dart';
+import '../../domain/model/produto.dart';
 import '../../domain/model/produto_com_custo.dart';
 import '../../domain/model/tendencia_preco.dart';
 import '../../domain/usecase/cost_engine.dart';
@@ -34,9 +36,14 @@ class HomeData {
     required this.produtosComCusto,
   });
 
-  /// Produtos com preço praticado cuja margem real caiu abaixo da margem-alvo.
-  List<ProdutoComCusto> get produtosAbaixoDaMeta =>
-      produtosComCusto.where((p) => p.margemAbaixoDaMeta).toList();
+  /// Porções com preço praticado cuja margem real caiu abaixo da
+  /// margem-alvo. Cada alerta aponta para uma porção específica, já que
+  /// margem e preço são definidos por tamanho.
+  List<({Produto produto, PorcaoComCusto porcao})> get porcoesAbaixoDaMeta => [
+    for (final item in produtosComCusto)
+      for (final porcao in item.porcoesAbaixoDaMeta)
+        (produto: item.produto, porcao: porcao),
+  ];
 }
 
 final homeDataProvider = StreamProvider<HomeData>((ref) {

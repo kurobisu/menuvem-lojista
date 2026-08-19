@@ -3,7 +3,9 @@ String divisorDeMultiplicador(double multiplicador) {
   if (multiplicador <= 0) return '1';
   final inverso = 1.0 / multiplicador;
   final n = inverso.round();
-  return (inverso - n).abs() < 0.001 ? n.toString() : inverso.toStringAsFixed(2);
+  return (inverso - n).abs() < 0.001
+      ? n.toString()
+      : inverso.toStringAsFixed(2);
 }
 
 /// Converte o divisor (n) no multiplicador 1/n.

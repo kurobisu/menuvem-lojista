@@ -36,10 +36,13 @@ class InsumosUiState {
     bool clearError = false,
   }) {
     return InsumosUiState(
-      filtroCategoria: clearFiltro ? null : (filtroCategoria ?? this.filtroCategoria),
+      filtroCategoria: clearFiltro
+          ? null
+          : (filtroCategoria ?? this.filtroCategoria),
       showFormDialog: showFormDialog ?? this.showFormDialog,
-      insumoEmEdicao:
-          clearInsumoEmEdicao ? null : (insumoEmEdicao ?? this.insumoEmEdicao),
+      insumoEmEdicao: clearInsumoEmEdicao
+          ? null
+          : (insumoEmEdicao ?? this.insumoEmEdicao),
       insumoParaExcluir: clearInsumoParaExcluir
           ? null
           : (insumoParaExcluir ?? this.insumoParaExcluir),
@@ -53,7 +56,10 @@ class InsumosController extends Notifier<InsumosUiState> {
   InsumosUiState build() => const InsumosUiState();
 
   void onFiltroChange(CategoriaInsumo? categoria) {
-    state = state.copyWith(filtroCategoria: categoria, clearFiltro: categoria == null);
+    state = state.copyWith(
+      filtroCategoria: categoria,
+      clearFiltro: categoria == null,
+    );
   }
 
   void onShowForm([Insumo? insumo]) {
@@ -78,7 +84,8 @@ class InsumosController extends Notifier<InsumosUiState> {
     String? emoji,
   }) async {
     final emEdicao = state.insumoEmEdicao;
-    final base = emEdicao ??
+    final base =
+        emEdicao ??
         Insumo(
           nome: nome,
           unidadeCompra: unidadeCompra,

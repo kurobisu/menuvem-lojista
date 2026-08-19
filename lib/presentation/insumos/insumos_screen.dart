@@ -4,9 +4,14 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../domain/model/categoria_insumo.dart';
 import '../../domain/model/insumo.dart';
 import '../../theme/app_theme.dart';
+import '../components/back_or_home_button.dart';
 import '../components/emoji_picker_field.dart';
 import '../components/empty_state.dart';
 import '../components/formatters.dart';
+import '../components/responsive.dart';
+import '../components/tutorial/tutorial_button.dart';
+import '../components/tutorial/tutorial_keys.dart';
+import '../components/tutorial/tutorial_passos.dart';
 import 'insumo_form_dialog.dart';
 import 'insumos_controller.dart';
 
@@ -21,53 +26,57 @@ class InsumosScreen extends ConsumerWidget {
 
     ref.listen(insumosControllerProvider.select((s) => s.error), (prev, next) {
       if (next != null) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(next)));
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(next)));
         controller.clearError();
       }
     });
 
-    ref.listen(insumosControllerProvider.select((s) => s.showFormDialog), (prev, next) {
+    ref.listen(insumosControllerProvider.select((s) => s.showFormDialog), (
+      prev,
+      next,
+    ) {
       if (next) {
-        showModalBottomSheet<void>(
-          context: context,
-          isScrollControlled: true,
-          useSafeArea: true,
-          backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-          shape: const RoundedRectangleBorder(
-            borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-          ),
+        showResponsiveFormSheet<void>(
+          context,
           builder: (_) => InsumoFormDialog(
             insumo: ref.read(insumosControllerProvider).insumoEmEdicao,
-            onConfirm: ({
-              required nome,
-              required categoria,
-              required unidadeCompra,
-              required unidadeUso,
-              required fatorConversao,
-              required custoAtual,
-              emoji,
-            }) =>
-                controller.save(
-              nome: nome,
-              categoria: categoria,
-              unidadeCompra: unidadeCompra,
-              unidadeUso: unidadeUso,
-              fatorConversao: fatorConversao,
-              custoAtual: custoAtual,
-              emoji: emoji,
-            ),
+            onConfirm:
+                ({
+                  required nome,
+                  required categoria,
+                  required unidadeCompra,
+                  required unidadeUso,
+                  required fatorConversao,
+                  required custoAtual,
+                  emoji,
+                }) => controller.save(
+                  nome: nome,
+                  categoria: categoria,
+                  unidadeCompra: unidadeCompra,
+                  unidadeUso: unidadeUso,
+                  fatorConversao: fatorConversao,
+                  custoAtual: custoAtual,
+                  emoji: emoji,
+                ),
           ),
         ).then((_) => controller.onHideForm());
       }
     });
 
-    ref.listen(insumosControllerProvider.select((s) => s.insumoParaExcluir), (prev, next) {
+    ref.listen(insumosControllerProvider.select((s) => s.insumoParaExcluir), (
+      prev,
+      next,
+    ) {
       if (next != null) {
         showDialog<void>(
           context: context,
           builder: (_) => AlertDialog(
             title: const Text('Excluir insumo?'),
-            content: Text('"${next.nome}" e seu histórico de preços serão excluídos.'),
+            content: Text(
+              '"${next.nome}" e seu histórico de preços serão excluídos.',
+            ),
             actions: [
               TextButton(
                 onPressed: () => Navigator.of(context).pop(),
@@ -87,75 +96,90 @@ class InsumosScreen extends ConsumerWidget {
     });
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Biblioteca de Insumos')),
+      appBar: AppBar(
+        leading: const BackOrHomeButton(),
+        title: const Text('Biblioteca de Insumos'),
+        actions: const [TutorialButton(tela: TutorialTela.insumos)],
+      ),
       floatingActionButton: FloatingActionButton.extended(
+        key: TutorialKeys.insumosNovo,
         onPressed: () => controller.onShowForm(),
         backgroundColor: yellowSecondary,
         foregroundColor: Colors.white,
         icon: const Icon(Icons.add),
         label: const Text('Novo Insumo'),
       ),
-      body: Column(
-        children: [
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-            child: Row(
-              children: [
-                FilterChip(
-                  label: const Text('Todos'),
-                  selected: uiState.filtroCategoria == null,
-                  onSelected: (_) => controller.onFiltroChange(null),
-                ),
-                const SizedBox(width: 8),
-                FilterChip(
-                  label: const Text('Insumos'),
-                  selected: uiState.filtroCategoria == CategoriaInsumo.insumo,
-                  onSelected: (_) => controller.onFiltroChange(CategoriaInsumo.insumo),
-                ),
-                const SizedBox(width: 8),
-                FilterChip(
-                  label: const Text('Embalagens'),
-                  selected: uiState.filtroCategoria == CategoriaInsumo.embalagem,
-                  onSelected: (_) =>
-                      controller.onFiltroChange(CategoriaInsumo.embalagem),
-                ),
-              ],
+      body: MaxWidthCenter(
+        child: Column(
+          children: [
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+              child: Row(
+                children: [
+                  FilterChip(
+                    label: const Text('Todos'),
+                    selected: uiState.filtroCategoria == null,
+                    onSelected: (_) => controller.onFiltroChange(null),
+                  ),
+                  const SizedBox(width: 8),
+                  FilterChip(
+                    label: const Text('Insumos'),
+                    selected: uiState.filtroCategoria == CategoriaInsumo.insumo,
+                    onSelected: (_) =>
+                        controller.onFiltroChange(CategoriaInsumo.insumo),
+                  ),
+                  const SizedBox(width: 8),
+                  FilterChip(
+                    label: const Text('Embalagens'),
+                    selected:
+                        uiState.filtroCategoria == CategoriaInsumo.embalagem,
+                    onSelected: (_) =>
+                        controller.onFiltroChange(CategoriaInsumo.embalagem),
+                  ),
+                ],
+              ),
             ),
-          ),
-          Expanded(
-            child: insumosAsync.when(
-              loading: () =>
-                  const Center(child: CircularProgressIndicator(color: purplePrimary)),
-              error: (e, _) => Center(child: Text('Erro: $e')),
-              data: (insumos) {
-                final filtrados = uiState.filtroCategoria == null
-                    ? insumos
-                    : insumos.where((i) => i.categoria == uiState.filtroCategoria).toList();
-                if (filtrados.isEmpty) {
-                  return const EmptyState(
-                    icon: Icons.inventory_2_outlined,
-                    title: 'Nenhum insumo cadastrado',
-                    subtitle:
-                        'Cadastre insumos e embalagens com o custo por unidade para montar as fichas técnicas',
-                  );
-                }
-                return ListView.separated(
-                  padding: const EdgeInsets.fromLTRB(16, 4, 16, 88),
-                  itemCount: filtrados.length,
-                  separatorBuilder: (_, _) => const SizedBox(height: 8),
-                  itemBuilder: (context, i) {
-                    final insumo = filtrados[i];
-                    return _InsumoRow(
-                      insumo: insumo,
-                      onTap: () => controller.onShowForm(insumo),
-                      onDelete: () => controller.onShowDeleteConfirm(insumo),
+            Expanded(
+              child: insumosAsync.when(
+                loading: () => const Center(
+                  child: CircularProgressIndicator(color: purplePrimary),
+                ),
+                error: (e, _) => Center(child: Text('Erro: $e')),
+                data: (insumos) {
+                  final filtrados = uiState.filtroCategoria == null
+                      ? insumos
+                      : insumos
+                            .where(
+                              (i) => i.categoria == uiState.filtroCategoria,
+                            )
+                            .toList();
+                  if (filtrados.isEmpty) {
+                    return const EmptyState(
+                      icon: Icons.inventory_2_outlined,
+                      title: 'Nenhum insumo cadastrado',
+                      subtitle:
+                          'Cadastre insumos e embalagens com o custo por unidade para montar as fichas técnicas',
                     );
-                  },
-                );
-              },
+                  }
+                  return ListView.separated(
+                    key: TutorialKeys.insumosLista,
+                    padding: const EdgeInsets.fromLTRB(16, 4, 16, 88),
+                    itemCount: filtrados.length,
+                    separatorBuilder: (_, _) => const SizedBox(height: 8),
+                    itemBuilder: (context, i) {
+                      final insumo = filtrados[i];
+                      return _InsumoRow(
+                        insumo: insumo,
+                        onTap: () => controller.onShowForm(insumo),
+                        onDelete: () => controller.onShowDeleteConfirm(insumo),
+                      );
+                    },
+                  );
+                },
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
       bottomSheet: null,
     );
@@ -163,13 +187,19 @@ class InsumosScreen extends ConsumerWidget {
 }
 
 class _InsumoRow extends StatelessWidget {
-  const _InsumoRow({required this.insumo, required this.onTap, required this.onDelete});
+  const _InsumoRow({
+    required this.insumo,
+    required this.onTap,
+    required this.onDelete,
+  });
   final Insumo insumo;
   final VoidCallback onTap;
   final VoidCallback onDelete;
 
   static String _formatarFator(double valor) {
-    return valor % 1.0 == 0.0 ? valor.toInt().toString() : valor.toStringAsFixed(2);
+    return valor % 1.0 == 0.0
+        ? valor.toInt().toString()
+        : valor.toStringAsFixed(2);
   }
 
   @override
@@ -181,7 +211,10 @@ class _InsumoRow extends StatelessWidget {
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
           child: Row(
             children: [
-              EmojiAvatar(emoji: insumo.emoji, fallback: Icons.inventory_2_outlined),
+              EmojiAvatar(
+                emoji: insumo.emoji,
+                fallback: Icons.inventory_2_outlined,
+              ),
               const SizedBox(width: 12),
               Expanded(
                 child: Column(
@@ -200,17 +233,17 @@ class _InsumoRow extends StatelessWidget {
                         if (insumo.categoria == CategoriaInsumo.embalagem) ...[
                           const SizedBox(width: 8),
                           Container(
-                            padding:
-                                const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 8,
+                              vertical: 2,
+                            ),
                             decoration: BoxDecoration(
                               color: yellowContainer,
                               borderRadius: BorderRadius.circular(50),
                             ),
                             child: Text(
                               'embalagem',
-                              style: Theme.of(context)
-                                  .textTheme
-                                  .labelSmall
+                              style: Theme.of(context).textTheme.labelSmall
                                   ?.copyWith(color: yellowOnContainer),
                             ),
                           ),
@@ -220,8 +253,8 @@ class _InsumoRow extends StatelessWidget {
                     Text(
                       '1 ${insumo.unidadeCompra} = ${_formatarFator(insumo.fatorConversao)} ${insumo.unidadeUso}',
                       style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                            color: Theme.of(context).colorScheme.onSurfaceVariant,
-                          ),
+                        color: Theme.of(context).colorScheme.onSurfaceVariant,
+                      ),
                     ),
                   ],
                 ),
@@ -231,16 +264,15 @@ class _InsumoRow extends StatelessWidget {
                 children: [
                   Text(
                     'R\$ ${formatarMoeda(insumo.custoAtual)}/${insumo.unidadeCompra}',
-                    style: Theme.of(context)
-                        .textTheme
-                        .titleSmall
-                        ?.copyWith(fontWeight: FontWeight.w600),
+                    style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                      fontWeight: FontWeight.w600,
+                    ),
                   ),
                   Text(
                     'R\$ ${formatarMoeda(insumo.custoPorUnidadeUso)}/${insumo.unidadeUso}',
                     style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                          color: Theme.of(context).colorScheme.onSurfaceVariant,
-                        ),
+                      color: Theme.of(context).colorScheme.onSurfaceVariant,
+                    ),
                   ),
                 ],
               ),

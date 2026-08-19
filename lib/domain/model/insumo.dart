@@ -72,13 +72,13 @@ class Insumo {
 
   @override
   int get hashCode => Object.hash(
-        id,
-        nome,
-        unidadeCompra,
-        unidadeUso,
-        fatorConversao,
-        custoAtual,
-        categoria,
-        emoji,
-      );
+    id,
+    nome,
+    unidadeCompra,
+    unidadeUso,
+    fatorConversao,
+    custoAtual,
+    categoria,
+    emoji,
+  );
 }

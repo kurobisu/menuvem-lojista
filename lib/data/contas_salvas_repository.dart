@@ -19,7 +19,10 @@ class ContaSalva {
   /// Inicial exibida no círculo do avatar.
   String get inicial => apelido.isEmpty ? '?' : apelido[0].toUpperCase();
 
-  Map<String, dynamic> toJson() => {'email': email, 'refresh_token': refreshToken};
+  Map<String, dynamic> toJson() => {
+    'email': email,
+    'refresh_token': refreshToken,
+  };
 
   static ContaSalva? fromJson(Map<String, dynamic> json) {
     final email = json['email'] as String?;
@@ -44,7 +47,9 @@ class ContasSalvasRepository {
     return bruto
         .map((linha) {
           try {
-            return ContaSalva.fromJson(jsonDecode(linha) as Map<String, dynamic>);
+            return ContaSalva.fromJson(
+              jsonDecode(linha) as Map<String, dynamic>,
+            );
           } catch (_) {
             // entrada corrompida ou de um formato antigo: ignora
             return null;

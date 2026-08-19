@@ -5,9 +5,14 @@ import 'package:go_router/go_router.dart';
 
 import '../../domain/model/componente_com_custo.dart';
 import '../../theme/app_theme.dart';
+import '../components/back_or_home_button.dart';
 import '../components/emoji_picker_field.dart';
 import '../components/empty_state.dart';
 import '../components/formatters.dart';
+import '../components/responsive.dart';
+import '../components/tutorial/tutorial_button.dart';
+import '../components/tutorial/tutorial_keys.dart';
+import '../components/tutorial/tutorial_passos.dart';
 import 'componente_form_dialog.dart';
 import 'componentes_controller.dart';
 
@@ -43,13 +48,18 @@ class _ComponentesScreenState extends ConsumerState<ComponentesScreen> {
     } catch (e) {
       if (!mounted) return;
       setState(() => _isSavingOrder = false);
-      ScaffoldMessenger.of(context)
-          .showSnackBar(SnackBar(content: Text('Não foi possível salvar a ordem: $e')));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Não foi possível salvar a ordem: $e')),
+      );
     }
   }
 
-  void _confirmDeleteTipo(BuildContext context, ComponentesController controller, int tipoId,
-      String tipoNome) {
+  void _confirmDeleteTipo(
+    BuildContext context,
+    ComponentesController controller,
+    int tipoId,
+    String tipoNome,
+  ) {
     showDialog<void>(
       context: context,
       builder: (_) => AlertDialog(
@@ -81,21 +91,23 @@ class _ComponentesScreenState extends ConsumerState<ComponentesScreen> {
     final uiState = ref.watch(componentesControllerProvider);
     final controller = ref.read(componentesControllerProvider.notifier);
 
-    ref.listen(componentesControllerProvider.select((s) => s.showFormDialog), (prev, next) {
+    ref.listen(componentesControllerProvider.select((s) => s.showFormDialog), (
+      prev,
+      next,
+    ) {
       if (next) {
         final state = ref.read(componentesControllerProvider);
         final componente = state.componenteEmEdicao;
-        final tipos = ref.read(tiposComponenteProvider).asData?.value ?? const [];
-        final tipoIdParaPrefill = componente?.tipoComponenteId ?? state.filtroTipoId;
-        final tipoNome = tipos.where((t) => t.id == tipoIdParaPrefill).firstOrNull?.nome;
-        showModalBottomSheet<void>(
-          context: context,
-          isScrollControlled: true,
-          useSafeArea: true,
-          backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-          shape: const RoundedRectangleBorder(
-            borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-          ),
+        final tipos =
+            ref.read(tiposComponenteProvider).asData?.value ?? const [];
+        final tipoIdParaPrefill =
+            componente?.tipoComponenteId ?? state.filtroTipoId;
+        final tipoNome = tipos
+            .where((t) => t.id == tipoIdParaPrefill)
+            .firstOrNull
+            ?.nome;
+        showResponsiveFormSheet<void>(
+          context,
           builder: (_) => ComponenteFormDialog(
             componente: componente,
             tipoNomeAtual: tipoNome,
@@ -105,44 +117,53 @@ class _ComponentesScreenState extends ConsumerState<ComponentesScreen> {
       }
     });
 
-    ref.listen(componentesControllerProvider.select((s) => s.componenteParaExcluir), (prev, next) {
-      if (next != null) {
-        showDialog<void>(
-          context: context,
-          builder: (_) => AlertDialog(
-            title: const Text('Excluir componente?'),
-            content: Text(
-              '"${next.componente.nome}" e seus itens serão excluídos. Ele também será removido dos produtos que o utilizam.',
+    ref.listen(
+      componentesControllerProvider.select((s) => s.componenteParaExcluir),
+      (prev, next) {
+        if (next != null) {
+          showDialog<void>(
+            context: context,
+            builder: (_) => AlertDialog(
+              title: const Text('Excluir componente?'),
+              content: Text(
+                '"${next.componente.nome}" e seus itens serão excluídos. Ele também será removido dos produtos que o utilizam.',
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.of(context).pop(),
+                  child: const Text('Cancelar'),
+                ),
+                TextButton(
+                  onPressed: () {
+                    Navigator.of(context).pop();
+                    controller.delete();
+                  },
+                  child: const Text(
+                    'Excluir',
+                    style: TextStyle(color: errorRed),
+                  ),
+                ),
+              ],
             ),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.of(context).pop(),
-                child: const Text('Cancelar'),
-              ),
-              TextButton(
-                onPressed: () {
-                  Navigator.of(context).pop();
-                  controller.delete();
-                },
-                child: const Text('Excluir', style: TextStyle(color: errorRed)),
-              ),
-            ],
-          ),
-        ).then((_) => controller.onHideDeleteConfirm());
-      }
-    });
+          ).then((_) => controller.onHideDeleteConfirm());
+        }
+      },
+    );
 
     final podeReordenar = uiState.filtroTipoId == null;
 
     return Scaffold(
       appBar: AppBar(
+        leading: const BackOrHomeButton(),
         title: const Text('Componentes'),
         actions: [
           if (_hasOrderChanges)
             Padding(
               padding: const EdgeInsets.symmetric(vertical: 8),
               child: ElevatedButton.icon(
-                onPressed: _isSavingOrder ? null : () => _salvarOrdem(controller),
+                onPressed: _isSavingOrder
+                    ? null
+                    : () => _salvarOrdem(controller),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: purplePrimary,
                   foregroundColor: Colors.white,
@@ -151,7 +172,10 @@ class _ComponentesScreenState extends ConsumerState<ComponentesScreen> {
                     ? const SizedBox(
                         width: 16,
                         height: 16,
-                        child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          color: Colors.white,
+                        ),
                       )
                     : const Icon(Icons.check, size: 18),
                 label: const Text('Salvar'),
@@ -162,130 +186,158 @@ class _ComponentesScreenState extends ConsumerState<ComponentesScreen> {
             tooltip: 'Reordenar tipos',
             onPressed: () => context.push('/componentes/tipos'),
           ),
+          const TutorialButton(tela: TutorialTela.componentes),
         ],
       ),
       floatingActionButton: FloatingActionButton.extended(
+        key: TutorialKeys.componentesNovo,
         onPressed: () => controller.onShowForm(),
         backgroundColor: yellowSecondary,
         foregroundColor: Colors.white,
         icon: const Icon(Icons.add),
         label: const Text('Novo Componente'),
       ),
-      body: Column(
-        children: [
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-            child: SingleChildScrollView(
-              scrollDirection: Axis.horizontal,
-              child: Row(
-                children: [
-                  FilterChip(
-                    label: const Text('Todos'),
-                    selected: uiState.filtroTipoId == null,
-                    onSelected: (_) => controller.onFiltroChange(null),
-                  ),
-                  const SizedBox(width: 8),
-                  for (final tipo in tiposAsync.asData?.value ?? const []) ...[
-                    FilterChip(
-                      label: Text(tipo.nome),
-                      selected: uiState.filtroTipoId == tipo.id,
-                      onSelected: (_) => controller.onFiltroChange(tipo.id),
-                      deleteIcon: const Icon(Icons.close, size: 16),
-                      onDeleted: () => _confirmDeleteTipo(context, controller, tipo.id, tipo.nome),
-                    ),
-                    const SizedBox(width: 8),
-                  ],
-                ],
-              ),
-            ),
-          ),
-          if (!podeReordenar)
+      body: MaxWidthCenter(
+        child: Column(
+          children: [
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-              child: Row(
-                children: [
-                  Icon(Icons.info_outline,
-                      size: 14, color: Theme.of(context).colorScheme.onSurfaceVariant),
-                  const SizedBox(width: 6),
-                  Text(
-                    'Selecione "Todos" para reordenar os componentes',
-                    style: Theme.of(context)
-                        .textTheme
-                        .labelSmall
-                        ?.copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant),
-                  ),
-                ],
+              child: SingleChildScrollView(
+                scrollDirection: Axis.horizontal,
+                child: Row(
+                  children: [
+                    FilterChip(
+                      label: const Text('Todos'),
+                      selected: uiState.filtroTipoId == null,
+                      onSelected: (_) => controller.onFiltroChange(null),
+                    ),
+                    const SizedBox(width: 8),
+                    for (final tipo
+                        in tiposAsync.asData?.value ?? const []) ...[
+                      FilterChip(
+                        label: Text(tipo.nome),
+                        selected: uiState.filtroTipoId == tipo.id,
+                        onSelected: (_) => controller.onFiltroChange(tipo.id),
+                        deleteIcon: const Icon(Icons.close, size: 16),
+                        onDeleted: () => _confirmDeleteTipo(
+                          context,
+                          controller,
+                          tipo.id,
+                          tipo.nome,
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                    ],
+                  ],
+                ),
               ),
             ),
-          Expanded(
-            child: componentesAsync.when(
-              loading: () =>
-                  const Center(child: CircularProgressIndicator(color: purplePrimary)),
-              error: (e, _) => Center(child: Text('Erro: $e')),
-              data: (componentes) {
-                final filtrados = uiState.filtroTipoId == null
-                    ? componentes
-                    : componentes
-                        .where((c) => c.componente.tipoComponenteId == uiState.filtroTipoId)
-                        .toList();
-                if (filtrados.isEmpty) {
-                  return const EmptyState(
-                    icon: Icons.widgets,
-                    title: 'Nenhum componente cadastrado',
-                    subtitle:
-                        'Componentes são blocos reutilizáveis (massa, sabor, embalagem) que você aplica em vários produtos',
-                  );
-                }
-
-                if (!podeReordenar) {
-                  return ListView.separated(
-                    padding: const EdgeInsets.fromLTRB(16, 4, 16, 88),
-                    itemCount: filtrados.length,
-                    separatorBuilder: (_, _) => const SizedBox(height: 8),
-                    itemBuilder: (context, i) => _ComponenteCard(item: filtrados[i]),
-                  );
-                }
-
-                if (_pendingSavedIds != null) {
-                  final currentIds = filtrados.map((c) => c.componente.id).toList();
-                  final confirmado = const ListEquality<int>().equals(currentIds, _pendingSavedIds) ||
-                      currentIds.length != _pendingSavedIds!.length;
-                  if (confirmado) _pendingSavedIds = null;
-                }
-                if (_pendingSavedIds == null && !_hasOrderChanges) {
-                  _localOrder = List.of(filtrados);
-                }
-                final lista = _localOrder!;
-
-                return ReorderableListView.builder(
-                  buildDefaultDragHandles: false,
-                  padding: const EdgeInsets.fromLTRB(16, 4, 16, 88),
-                  itemCount: lista.length,
-                  onReorderItem: (oldIndex, newIndex) {
-                    setState(() {
-                      final novaLista = List.of(lista);
-                      final item = novaLista.removeAt(oldIndex);
-                      novaLista.insert(newIndex, item);
-                      _localOrder = novaLista;
-                      _hasOrderChanges = true;
-                    });
-                  },
-                  itemBuilder: (context, i) {
-                    final item = lista[i];
-                    return Padding(
-                      key: ValueKey(item.componente.id),
-                      padding: const EdgeInsets.only(bottom: 8),
-                      child: ReorderableDelayedDragStartListener(
-                        index: i,
-                        child: _ComponenteCard(item: item),
+            if (!podeReordenar)
+              Padding(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 4,
+                ),
+                child: Row(
+                  children: [
+                    Icon(
+                      Icons.info_outline,
+                      size: 14,
+                      color: Theme.of(context).colorScheme.onSurfaceVariant,
+                    ),
+                    const SizedBox(width: 6),
+                    Text(
+                      'Selecione "Todos" para reordenar os componentes',
+                      style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                        color: Theme.of(context).colorScheme.onSurfaceVariant,
                       ),
+                    ),
+                  ],
+                ),
+              ),
+            Expanded(
+              child: componentesAsync.when(
+                loading: () => const Center(
+                  child: CircularProgressIndicator(color: purplePrimary),
+                ),
+                error: (e, _) => Center(child: Text('Erro: $e')),
+                data: (componentes) {
+                  final filtrados = uiState.filtroTipoId == null
+                      ? componentes
+                      : componentes
+                            .where(
+                              (c) =>
+                                  c.componente.tipoComponenteId ==
+                                  uiState.filtroTipoId,
+                            )
+                            .toList();
+                  if (filtrados.isEmpty) {
+                    return const EmptyState(
+                      icon: Icons.widgets,
+                      title: 'Nenhum componente cadastrado',
+                      subtitle:
+                          'Componentes são blocos reutilizáveis (massa, sabor, embalagem) que você aplica em vários produtos',
                     );
-                  },
-                );
-              },
+                  }
+
+                  if (!podeReordenar) {
+                    return ListView.separated(
+                      padding: const EdgeInsets.fromLTRB(16, 4, 16, 88),
+                      itemCount: filtrados.length,
+                      separatorBuilder: (_, _) => const SizedBox(height: 8),
+                      itemBuilder: (context, i) =>
+                          _ComponenteCard(item: filtrados[i]),
+                    );
+                  }
+
+                  if (_pendingSavedIds != null) {
+                    final currentIds = filtrados
+                        .map((c) => c.componente.id)
+                        .toList();
+                    final confirmado =
+                        const ListEquality<int>().equals(
+                          currentIds,
+                          _pendingSavedIds,
+                        ) ||
+                        currentIds.length != _pendingSavedIds!.length;
+                    if (confirmado) _pendingSavedIds = null;
+                  }
+                  if (_pendingSavedIds == null && !_hasOrderChanges) {
+                    _localOrder = List.of(filtrados);
+                  }
+                  final lista = _localOrder!;
+
+                  return ReorderableListView.builder(
+                    key: TutorialKeys.componentesLista,
+                    buildDefaultDragHandles: false,
+                    padding: const EdgeInsets.fromLTRB(16, 4, 16, 88),
+                    itemCount: lista.length,
+                    onReorderItem: (oldIndex, newIndex) {
+                      setState(() {
+                        final novaLista = List.of(lista);
+                        final item = novaLista.removeAt(oldIndex);
+                        novaLista.insert(newIndex, item);
+                        _localOrder = novaLista;
+                        _hasOrderChanges = true;
+                      });
+                    },
+                    itemBuilder: (context, i) {
+                      final item = lista[i];
+                      return Padding(
+                        key: ValueKey(item.componente.id),
+                        padding: const EdgeInsets.only(bottom: 8),
+                        child: ReorderableDelayedDragStartListener(
+                          index: i,
+                          child: _ComponenteCard(item: item),
+                        ),
+                      );
+                    },
+                  );
+                },
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
@@ -305,7 +357,10 @@ class _ComponenteCard extends ConsumerWidget {
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
           child: Row(
             children: [
-              EmojiAvatar(emoji: item.componente.emoji, fallback: Icons.widgets),
+              EmojiAvatar(
+                emoji: item.componente.emoji,
+                fallback: Icons.widgets,
+              ),
               const SizedBox(width: 12),
               Expanded(
                 child: Column(
@@ -324,16 +379,17 @@ class _ComponenteCard extends ConsumerWidget {
                         if (item.tipoNome != null) ...[
                           const SizedBox(width: 8),
                           Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 8,
+                              vertical: 2,
+                            ),
                             decoration: BoxDecoration(
                               color: purpleContainer,
                               borderRadius: BorderRadius.circular(50),
                             ),
                             child: Text(
                               item.tipoNome!,
-                              style: Theme.of(context)
-                                  .textTheme
-                                  .labelSmall
+                              style: Theme.of(context).textTheme.labelSmall
                                   ?.copyWith(color: purpleOnContainer),
                             ),
                           ),
@@ -345,8 +401,8 @@ class _ComponenteCard extends ConsumerWidget {
                           ? 'Sem insumos'
                           : '${item.quantidadeItens} insumo(s) por inteiro',
                       style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                            color: Theme.of(context).colorScheme.onSurfaceVariant,
-                          ),
+                        color: Theme.of(context).colorScheme.onSurfaceVariant,
+                      ),
                     ),
                   ],
                 ),
@@ -356,12 +412,14 @@ class _ComponenteCard extends ConsumerWidget {
                 children: [
                   Text(
                     'R\$ ${formatarMoeda(item.custo)}',
-                    style: Theme.of(context)
-                        .textTheme
-                        .titleSmall
-                        ?.copyWith(fontWeight: FontWeight.w600),
+                    style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                      fontWeight: FontWeight.w600,
+                    ),
                   ),
-                  Text('custo inteiro', style: Theme.of(context).textTheme.labelSmall),
+                  Text(
+                    'custo inteiro',
+                    style: Theme.of(context).textTheme.labelSmall,
+                  ),
                 ],
               ),
               IconButton(

@@ -5,9 +5,11 @@ import '../../domain/model/componente_com_custo.dart';
 import '../../domain/model/tipo_componente.dart';
 import '../../domain/usecase/componente_usecases.dart' as usecase;
 import '../../providers/repository_providers.dart';
-import '../products/produto_detail_controller.dart' show componentesLibraryProvider;
+import '../products/produto_detail_controller.dart'
+    show componentesLibraryProvider;
 
-export '../products/produto_detail_controller.dart' show componentesLibraryProvider;
+export '../products/produto_detail_controller.dart'
+    show componentesLibraryProvider;
 
 /// Tipos de componente já cadastrados pelo usuário (usados como sugestão de
 /// autocompletar ao criar/editar um componente).
@@ -44,8 +46,9 @@ class ComponentesUiState {
     return ComponentesUiState(
       filtroTipoId: clearFiltro ? null : (filtroTipoId ?? this.filtroTipoId),
       showFormDialog: showFormDialog ?? this.showFormDialog,
-      componenteEmEdicao:
-          clearComponenteEmEdicao ? null : (componenteEmEdicao ?? this.componenteEmEdicao),
+      componenteEmEdicao: clearComponenteEmEdicao
+          ? null
+          : (componenteEmEdicao ?? this.componenteEmEdicao),
       componenteParaExcluir: clearComponenteParaExcluir
           ? null
           : (componenteParaExcluir ?? this.componenteParaExcluir),
@@ -71,25 +74,40 @@ class ComponentesController extends Notifier<ComponentesUiState> {
   }
 
   void onHideForm() {
-    state = state.copyWith(showFormDialog: false, clearComponenteEmEdicao: true);
+    state = state.copyWith(
+      showFormDialog: false,
+      clearComponenteEmEdicao: true,
+    );
   }
 
   Future<void> save(String nome, String? tipoNome, String? emoji) async {
     final repo = ref.read(componenteRepositoryProvider);
     final tipoId = await usecase.resolveTipoComponenteId(repo, tipoNome);
     final emEdicao = state.componenteEmEdicao;
-    final ordemNova = ref.read(componentesLibraryProvider).asData?.value.length ?? 0;
-    final base = emEdicao ?? Componente(nome: nome, ordem: ordemNova);
-    await usecase.saveComponente(
-      repo,
-      base.copyWith(
+    final ordemNova =
+        ref.read(componentesLibraryProvider).asData?.value.length ?? 0;
+    if (emEdicao == null) {
+      // Componente novo: já nasce com o tamanho "Único" -- todo componente
+      // precisa ter ao menos um.
+      await usecase.criarComponenteComTamanhoInicial(
+        repo,
         nome: nome,
         tipoComponenteId: tipoId,
-        clearTipoComponenteId: tipoId == null,
         emoji: emoji,
-        clearEmoji: emoji == null,
-      ),
-    );
+        ordem: ordemNova,
+      );
+    } else {
+      await usecase.saveComponente(
+        repo,
+        emEdicao.copyWith(
+          nome: nome,
+          tipoComponenteId: tipoId,
+          clearTipoComponenteId: tipoId == null,
+          emoji: emoji,
+          clearEmoji: emoji == null,
+        ),
+      );
+    }
     onHideForm();
   }
 
@@ -99,7 +117,9 @@ class ComponentesController extends Notifier<ComponentesUiState> {
     final ordemPorId = {
       for (var i = 0; i < novaOrdem.length; i++) novaOrdem[i].componente.id: i,
     };
-    return ref.read(componenteRepositoryProvider).updateOrdensComponentes(ordemPorId);
+    return ref
+        .read(componenteRepositoryProvider)
+        .updateOrdensComponentes(ordemPorId);
   }
 
   /// Exclui um tipo de componente. Os componentes desse tipo ficam sem tipo
@@ -122,10 +142,14 @@ class ComponentesController extends Notifier<ComponentesUiState> {
   Future<void> delete() async {
     final item = state.componenteParaExcluir;
     if (item == null) return;
-    await ref.read(componenteRepositoryProvider).deleteComponente(item.componente);
+    await ref
+        .read(componenteRepositoryProvider)
+        .deleteComponente(item.componente);
     state = state.copyWith(clearComponenteParaExcluir: true);
   }
 }
 
 final componentesControllerProvider =
-    NotifierProvider<ComponentesController, ComponentesUiState>(ComponentesController.new);
+    NotifierProvider<ComponentesController, ComponentesUiState>(
+      ComponentesController.new,
+    );

@@ -16,8 +16,8 @@ class AuthRepository {
 
   String? get currentEmail => _client.auth.currentUser?.email;
 
-  Future<void> signIn(String email, String password) => _client.auth
-      .signInWithPassword(email: email.trim(), password: password);
+  Future<void> signIn(String email, String password) =>
+      _client.auth.signInWithPassword(email: email.trim(), password: password);
 
   Future<void> signUp(String email, String password) =>
       _client.auth.signUp(email: email.trim(), password: password);
@@ -32,8 +32,7 @@ class AuthRepository {
   ///
   /// Para revogar de fato (perda do aparelho, por exemplo), use o painel do
   /// Supabase ou remova a conta da lista de login rápido.
-  Future<void> signOut() =>
-      _client.auth.signOut(scope: SignOutScope.local);
+  Future<void> signOut() => _client.auth.signOut(scope: SignOutScope.local);
 
   /// Restaura uma sessão a partir de um refresh token guardado — é o que faz
   /// o login de um toque nos avatares de contas salvas.
