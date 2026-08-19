@@ -10,6 +10,7 @@ class Produto {
   final String nome;
   final double margemAlvoPercentual;
   final double? precoVendaAtual;
+  final String? emoji;
   final DateTime dataCriacao;
 
   Produto({
@@ -17,6 +18,7 @@ class Produto {
     required this.nome,
     this.margemAlvoPercentual = 30.0,
     this.precoVendaAtual,
+    this.emoji,
     DateTime? dataCriacao,
   }) : dataCriacao = dataCriacao ?? DateTime.now();
 
@@ -26,6 +28,8 @@ class Produto {
     double? margemAlvoPercentual,
     double? precoVendaAtual,
     bool clearPrecoVendaAtual = false,
+    String? emoji,
+    bool clearEmoji = false,
     DateTime? dataCriacao,
   }) {
     return Produto(
@@ -35,6 +39,7 @@ class Produto {
       precoVendaAtual: clearPrecoVendaAtual
           ? null
           : (precoVendaAtual ?? this.precoVendaAtual),
+      emoji: clearEmoji ? null : (emoji ?? this.emoji),
       dataCriacao: dataCriacao ?? this.dataCriacao,
     );
   }
@@ -45,9 +50,10 @@ class Produto {
       id == other.id &&
       nome == other.nome &&
       margemAlvoPercentual == other.margemAlvoPercentual &&
-      precoVendaAtual == other.precoVendaAtual;
+      precoVendaAtual == other.precoVendaAtual &&
+      emoji == other.emoji;
 
   @override
   int get hashCode =>
-      Object.hash(id, nome, margemAlvoPercentual, precoVendaAtual);
+      Object.hash(id, nome, margemAlvoPercentual, precoVendaAtual, emoji);
 }

@@ -14,12 +14,18 @@ Componente componenteFromRow(Map<String, dynamic> row) {
     nome: row['nome'] as String,
     tipoComponenteId: row['tipo_componente_id'] as int?,
     ordem: (row['ordem'] as num? ?? 0).toInt(),
+    emoji: row['emoji'] as String?,
     dataCriacao: DateTime.parse(row['data_criacao'] as String),
   );
 }
 
 Map<String, dynamic> _componenteToInsertRow(Componente c) {
-  return {'nome': c.nome, 'tipo_componente_id': c.tipoComponenteId, 'ordem': c.ordem};
+  return {
+    'nome': c.nome,
+    'tipo_componente_id': c.tipoComponenteId,
+    'ordem': c.ordem,
+    'emoji': c.emoji,
+  };
 }
 
 ItemComponente _itemComponenteFromRow(Map<String, dynamic> row) {

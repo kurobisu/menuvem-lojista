@@ -2,13 +2,19 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../domain/model/componente.dart';
+import '../../theme/app_theme.dart';
+import '../components/emoji_picker_field.dart';
+import '../components/emojis.dart';
 import 'componentes_controller.dart' show tiposComponenteProvider;
 
-typedef ComponenteFormConfirm = void Function(String nome, String? tipoNome);
+typedef ComponenteFormConfirm = void Function(String nome, String? tipoNome, String? emoji);
 
-/// Dialog de criação/edição de componente: nome + tipo. O tipo é digitado
-/// livremente e reaproveitado (sugestão de autocompletar) entre os
-/// componentes já cadastrados pelo usuário — não é mais uma lista fixa.
+/// Folha de criação/edição de componente: nome, tipo e ícone. O tipo é
+/// digitado livremente e reaproveitado (sugestão de autocompletar) entre os
+/// componentes já cadastrados pelo usuário — não é uma lista fixa.
+///
+/// O botão Salvar fica no cabeçalho fixo (nunca atrás do teclado) — só o
+/// conteúdo abaixo rola.
 class ComponenteFormDialog extends ConsumerStatefulWidget {
   const ComponenteFormDialog({
     super.key,
@@ -28,6 +34,7 @@ class ComponenteFormDialog extends ConsumerStatefulWidget {
 class _ComponenteFormDialogState extends ConsumerState<ComponenteFormDialog> {
   late final _nomeController = TextEditingController(text: widget.componente?.nome ?? '');
   late final _tipoController = TextEditingController(text: widget.tipoNomeAtual ?? '');
+  late String? _emoji = widget.componente?.emoji;
 
   @override
   void dispose() {
@@ -43,13 +50,54 @@ class _ComponenteFormDialogState extends ConsumerState<ComponenteFormDialog> {
     final nomesExistentes =
         tiposAsync.maybeWhen(data: (tipos) => tipos.map((t) => t.nome).toList(), orElse: () => const <String>[]);
 
-    return AlertDialog(
-      title: Text(widget.componente == null ? 'Novo Componente' : 'Editar Componente'),
-      content: SingleChildScrollView(
+    return Padding(
+      padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
+      child: SingleChildScrollView(
+        padding: const EdgeInsets.fromLTRB(20, 12, 20, 20),
         child: Column(
           mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
+            Center(
+              child: Container(
+                width: 40,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: outlineLight,
+                  borderRadius: BorderRadius.circular(4),
+                ),
+              ),
+            ),
+            const SizedBox(height: 12),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                TextButton(
+                  onPressed: () => Navigator.of(context).pop(),
+                  child: const Text('Cancelar'),
+                ),
+                Text(widget.componente == null ? 'Novo Componente' : 'Editar Componente',
+                    style: Theme.of(context)
+                        .textTheme
+                        .titleMedium
+                        ?.copyWith(fontWeight: FontWeight.w600)),
+                TextButton(
+                  onPressed: isValid
+                      ? () {
+                          final tipo = _tipoController.text.trim();
+                          widget.onConfirm(
+                            _nomeController.text.trim(),
+                            tipo.isEmpty ? null : tipo,
+                            _emoji,
+                          );
+                          Navigator.of(context).pop();
+                        }
+                      : null,
+                  child: const Text('Salvar'),
+                ),
+              ],
+            ),
+            const SizedBox(height: 8),
             TextField(
               controller: _nomeController,
               decoration: const InputDecoration(
@@ -58,6 +106,14 @@ class _ComponenteFormDialogState extends ConsumerState<ComponenteFormDialog> {
               ),
               textCapitalization: TextCapitalization.sentences,
               onChanged: (_) => setState(() {}),
+            ),
+            const SizedBox(height: 12),
+            Text('Ícone (opcional)', style: Theme.of(context).textTheme.labelMedium),
+            const SizedBox(height: 8),
+            EmojiPickerField(
+              opcoes: emojisComponente,
+              selecionado: _emoji,
+              onChanged: (v) => setState(() => _emoji = v),
             ),
             const SizedBox(height: 12),
             Autocomplete<String>(
@@ -82,22 +138,6 @@ class _ComponenteFormDialogState extends ConsumerState<ComponenteFormDialog> {
           ],
         ),
       ),
-      actions: [
-        TextButton(
-          onPressed: () => Navigator.of(context).pop(),
-          child: const Text('Cancelar'),
-        ),
-        TextButton(
-          onPressed: isValid
-              ? () {
-                  final tipo = _tipoController.text.trim();
-                  widget.onConfirm(_nomeController.text.trim(), tipo.isEmpty ? null : tipo);
-                  Navigator.of(context).pop();
-                }
-              : null,
-          child: const Text('Salvar'),
-        ),
-      ],
     );
   }
 }

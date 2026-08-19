@@ -16,6 +16,7 @@ class Componente {
   final String nome;
   final int? tipoComponenteId;
   final int ordem;
+  final String? emoji;
   final DateTime dataCriacao;
 
   Componente({
@@ -23,6 +24,7 @@ class Componente {
     required this.nome,
     this.tipoComponenteId,
     this.ordem = 0,
+    this.emoji,
     DateTime? dataCriacao,
   }) : dataCriacao = dataCriacao ?? DateTime.now();
 
@@ -32,6 +34,8 @@ class Componente {
     int? tipoComponenteId,
     bool clearTipoComponenteId = false,
     int? ordem,
+    String? emoji,
+    bool clearEmoji = false,
   }) {
     return Componente(
       id: id ?? this.id,
@@ -39,6 +43,7 @@ class Componente {
       tipoComponenteId:
           clearTipoComponenteId ? null : (tipoComponenteId ?? this.tipoComponenteId),
       ordem: ordem ?? this.ordem,
+      emoji: clearEmoji ? null : (emoji ?? this.emoji),
       dataCriacao: dataCriacao,
     );
   }

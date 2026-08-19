@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../domain/model/categoria_insumo.dart';
 import '../../domain/model/insumo.dart';
 import '../../theme/app_theme.dart';
+import '../components/emoji_picker_field.dart';
 import '../components/empty_state.dart';
 import '../components/formatters.dart';
 import 'insumo_form_dialog.dart';
@@ -44,6 +45,7 @@ class InsumosScreen extends ConsumerWidget {
               required unidadeUso,
               required fatorConversao,
               required custoAtual,
+              emoji,
             }) =>
                 controller.save(
               nome: nome,
@@ -52,6 +54,7 @@ class InsumosScreen extends ConsumerWidget {
               unidadeUso: unidadeUso,
               fatorConversao: fatorConversao,
               custoAtual: custoAtual,
+              emoji: emoji,
             ),
           ),
         ).then((_) => controller.onHideForm());
@@ -178,6 +181,8 @@ class _InsumoRow extends StatelessWidget {
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
           child: Row(
             children: [
+              EmojiAvatar(emoji: insumo.emoji, fallback: Icons.inventory_2_outlined),
+              const SizedBox(width: 12),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,

@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../domain/model/componente_com_custo.dart';
 import '../../theme/app_theme.dart';
+import '../components/emoji_picker_field.dart';
 import '../components/empty_state.dart';
 import '../components/formatters.dart';
 import 'componente_form_dialog.dart';
@@ -21,18 +22,30 @@ class _ComponentesScreenState extends ConsumerState<ComponentesScreen> {
   List<ComponenteComCusto>? _localOrder;
   bool _hasOrderChanges = false;
   bool _isSavingOrder = false;
+  // ids na ordem recém-salva: o stream do Supabase demora um instante pra
+  // reemitir depois do UPDATE, e sem isso a lista "voltava" pra ordem antiga
+  // por uma fração de segundo (ou de vez, se o usuário não esperasse).
+  // Mantém a ordem local até o stream confirmar, em vez de descartar na hora.
+  List<int>? _pendingSavedIds;
 
   Future<void> _salvarOrdem(ComponentesController controller) async {
     final local = _localOrder;
     if (local == null || !_hasOrderChanges) return;
     setState(() => _isSavingOrder = true);
-    await controller.salvarOrdemComponentes(local);
-    if (!mounted) return;
-    setState(() {
-      _isSavingOrder = false;
-      _hasOrderChanges = false;
-      _localOrder = null;
-    });
+    try {
+      await controller.salvarOrdemComponentes(local);
+      if (!mounted) return;
+      setState(() {
+        _isSavingOrder = false;
+        _hasOrderChanges = false;
+        _pendingSavedIds = local.map((c) => c.componente.id).toList();
+      });
+    } catch (e) {
+      if (!mounted) return;
+      setState(() => _isSavingOrder = false);
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text('Não foi possível salvar a ordem: $e')));
+    }
   }
 
   void _confirmDeleteTipo(BuildContext context, ComponentesController controller, int tipoId,
@@ -75,8 +88,14 @@ class _ComponentesScreenState extends ConsumerState<ComponentesScreen> {
         final tipos = ref.read(tiposComponenteProvider).asData?.value ?? const [];
         final tipoIdParaPrefill = componente?.tipoComponenteId ?? state.filtroTipoId;
         final tipoNome = tipos.where((t) => t.id == tipoIdParaPrefill).firstOrNull?.nome;
-        showDialog<void>(
+        showModalBottomSheet<void>(
           context: context,
+          isScrollControlled: true,
+          useSafeArea: true,
+          backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+          shape: const RoundedRectangleBorder(
+            borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+          ),
           builder: (_) => ComponenteFormDialog(
             componente: componente,
             tipoNomeAtual: tipoNome,
@@ -227,7 +246,15 @@ class _ComponentesScreenState extends ConsumerState<ComponentesScreen> {
                   );
                 }
 
-                if (!_hasOrderChanges) _localOrder = List.of(filtrados);
+                if (_pendingSavedIds != null) {
+                  final currentIds = filtrados.map((c) => c.componente.id).toList();
+                  final confirmado = const ListEquality<int>().equals(currentIds, _pendingSavedIds) ||
+                      currentIds.length != _pendingSavedIds!.length;
+                  if (confirmado) _pendingSavedIds = null;
+                }
+                if (_pendingSavedIds == null && !_hasOrderChanges) {
+                  _localOrder = List.of(filtrados);
+                }
                 final lista = _localOrder!;
 
                 return ReorderableListView.builder(
@@ -278,6 +305,8 @@ class _ComponenteCard extends ConsumerWidget {
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
           child: Row(
             children: [
+              EmojiAvatar(emoji: item.componente.emoji, fallback: Icons.widgets),
+              const SizedBox(width: 12),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,

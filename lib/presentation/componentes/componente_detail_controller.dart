@@ -9,7 +9,7 @@ class ComponenteDetailActions {
   final Ref ref;
   final int componenteId;
 
-  Future<void> updateComponente(String nome, String? tipoNome) async {
+  Future<void> updateComponente(String nome, String? tipoNome, String? emoji) async {
     final repo = ref.read(componenteRepositoryProvider);
     final c = await repo.getComponenteById(componenteId);
     if (c == null) return;
@@ -18,6 +18,8 @@ class ComponenteDetailActions {
       nome: nome,
       tipoComponenteId: tipoId,
       clearTipoComponenteId: tipoId == null,
+      emoji: emoji,
+      clearEmoji: emoji == null,
     ));
   }
 

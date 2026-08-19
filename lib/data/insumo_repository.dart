@@ -18,6 +18,7 @@ Insumo insumoFromRow(Map<String, dynamic> row) {
       (c) => c.name.toUpperCase() == (row['categoria'] as String? ?? 'INSUMO'),
       orElse: () => CategoriaInsumo.insumo,
     ),
+    emoji: row['emoji'] as String?,
   );
 }
 
@@ -29,6 +30,7 @@ Map<String, dynamic> _insumoToInsertRow(Insumo insumo) {
     'fator_conversao': insumo.fatorConversao,
     'custo_atual': insumo.custoAtual,
     'categoria': insumo.categoria.name.toUpperCase(),
+    'emoji': insumo.emoji,
   };
 }
 

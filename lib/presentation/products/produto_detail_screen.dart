@@ -33,15 +33,32 @@ class ProdutoDetailScreen extends ConsumerWidget {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(item?.produto.nome ?? 'Produto', maxLines: 1, overflow: TextOverflow.ellipsis),
+        title: Row(
+          children: [
+            if (item?.produto.emoji != null) ...[
+              Text(item!.produto.emoji!, style: const TextStyle(fontSize: 20)),
+              const SizedBox(width: 8),
+            ],
+            Flexible(
+              child: Text(item?.produto.nome ?? 'Produto',
+                  maxLines: 1, overflow: TextOverflow.ellipsis),
+            ),
+          ],
+        ),
         actions: [
           IconButton(
             icon: const Icon(Icons.edit),
             tooltip: 'Editar produto',
             onPressed: item == null
                 ? null
-                : () => showDialog<void>(
+                : () => showModalBottomSheet<void>(
                       context: context,
+                      isScrollControlled: true,
+                      useSafeArea: true,
+                      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+                      shape: const RoundedRectangleBorder(
+                        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+                      ),
                       builder: (_) => ProdutoFormDialog(
                         produto: item.produto,
                         onConfirm: actions.updateProduto,

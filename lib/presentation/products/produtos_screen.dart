@@ -8,6 +8,7 @@ import '../../domain/usecase/cost_engine.dart';
 import '../../domain/usecase/produto_usecases.dart' as usecase;
 import '../../providers/repository_providers.dart';
 import '../../theme/app_theme.dart';
+import '../components/emoji_picker_field.dart';
 import '../components/empty_state.dart';
 import '../components/formatters.dart';
 import 'produto_form_dialog.dart';
@@ -30,13 +31,24 @@ class ProdutosScreen extends ConsumerWidget {
     return Scaffold(
       appBar: AppBar(title: const Text('Produtos')),
       floatingActionButton: FloatingActionButton.extended(
-        onPressed: () => showDialog<void>(
+        onPressed: () => showModalBottomSheet<void>(
           context: context,
+          isScrollControlled: true,
+          useSafeArea: true,
+          backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+          shape: const RoundedRectangleBorder(
+            borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+          ),
           builder: (_) => ProdutoFormDialog(
-            onConfirm: (nome, margem, preco) async {
+            onConfirm: (nome, margem, preco, emoji) async {
               final id = await usecase.saveProduto(
                 ref.read(produtoRepositoryProvider),
-                Produto(nome: nome, margemAlvoPercentual: margem, precoVendaAtual: preco),
+                Produto(
+                  nome: nome,
+                  margemAlvoPercentual: margem,
+                  precoVendaAtual: preco,
+                  emoji: emoji,
+                ),
               );
               if (context.mounted) context.push('/produtos/$id');
             },
@@ -92,6 +104,8 @@ class _ProdutoCard extends StatelessWidget {
               Row(
                 crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
+                  EmojiAvatar(emoji: item.produto.emoji, fallback: Icons.restaurant_outlined),
+                  const SizedBox(width: 12),
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,

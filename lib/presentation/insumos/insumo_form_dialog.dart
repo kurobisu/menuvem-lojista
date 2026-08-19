@@ -3,6 +3,8 @@ import 'package:flutter/material.dart';
 import '../../domain/model/categoria_insumo.dart';
 import '../../domain/model/insumo.dart';
 import '../../theme/app_theme.dart';
+import '../components/emoji_picker_field.dart';
+import '../components/emojis.dart';
 import '../components/formatters.dart';
 import '../components/unidades_medida.dart';
 
@@ -13,6 +15,7 @@ typedef InsumoFormConfirm = void Function({
   required String unidadeUso,
   required double fatorConversao,
   required double custoAtual,
+  String? emoji,
 });
 
 /// Normaliza pro valor canônico do preset (comparação sem diferenciar
@@ -86,6 +89,7 @@ class _InsumoFormDialogState extends State<InsumoFormDialog> {
   late CategoriaInsumo _categoria = widget.insumo?.categoria ?? CategoriaInsumo.insumo;
   late String? _unidadeCompra = _normalizarUnidade(widget.insumo?.unidadeCompra);
   late String? _unidadeUso = _normalizarUnidade(widget.insumo?.unidadeUso);
+  late String? _emoji = widget.insumo?.emoji;
   late final _fatorController = TextEditingController(
     text: widget.insumo == null
         ? ''
@@ -159,6 +163,7 @@ class _InsumoFormDialogState extends State<InsumoFormDialog> {
                             unidadeUso: _unidadeUso!,
                             fatorConversao: fatorVal,
                             custoAtual: custoVal ?? 0.0,
+                            emoji: _emoji,
                           );
                           Navigator.of(context).pop();
                         }
@@ -176,6 +181,14 @@ class _InsumoFormDialogState extends State<InsumoFormDialog> {
               ),
               textCapitalization: TextCapitalization.sentences,
               onChanged: (_) => setState(() {}),
+            ),
+            const SizedBox(height: 12),
+            Text('Ícone (opcional)', style: Theme.of(context).textTheme.labelMedium),
+            const SizedBox(height: 8),
+            EmojiPickerField(
+              opcoes: emojisInsumo,
+              selecionado: _emoji,
+              onChanged: (v) => setState(() => _emoji = v),
             ),
             const SizedBox(height: 12),
             Row(

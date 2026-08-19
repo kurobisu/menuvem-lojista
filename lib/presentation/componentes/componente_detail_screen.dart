@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../domain/model/insumo.dart';
 import '../../theme/app_theme.dart';
 import '../components/editar_quantidade_dialog.dart';
+import '../components/emoji_picker_field.dart';
 import '../components/empty_state.dart';
 import '../components/formatters.dart';
 import '../components/insumo_quantidade_row.dart';
@@ -34,8 +35,14 @@ class ComponenteDetailScreen extends ConsumerWidget {
             icon: const Icon(Icons.edit),
             onPressed: item == null
                 ? null
-                : () => showDialog<void>(
+                : () => showModalBottomSheet<void>(
                       context: context,
+                      isScrollControlled: true,
+                      useSafeArea: true,
+                      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+                      shape: const RoundedRectangleBorder(
+                        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+                      ),
                       builder: (_) => ComponenteFormDialog(
                         componente: item.componente,
                         tipoNomeAtual: item.tipoNome,
@@ -83,7 +90,11 @@ class ComponenteDetailScreen extends ConsumerWidget {
                     padding: const EdgeInsets.all(16),
                     child: Row(
                       children: [
-                        const Icon(Icons.widgets, color: purplePrimary, size: 28),
+                        EmojiAvatar(
+                          emoji: item.componente.emoji,
+                          fallback: Icons.widgets,
+                          radius: 24,
+                        ),
                         const SizedBox(width: 12),
                         Expanded(
                           child: Column(

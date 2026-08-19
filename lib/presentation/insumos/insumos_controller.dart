@@ -75,6 +75,7 @@ class InsumosController extends Notifier<InsumosUiState> {
     required String unidadeUso,
     required double fatorConversao,
     required double custoAtual,
+    String? emoji,
   }) async {
     final emEdicao = state.insumoEmEdicao;
     final base = emEdicao ??
@@ -93,6 +94,8 @@ class InsumosController extends Notifier<InsumosUiState> {
         unidadeUso: unidadeUso,
         fatorConversao: fatorConversao,
         custoAtual: custoAtual,
+        emoji: emoji,
+        clearEmoji: emoji == null,
       ),
     );
     onHideForm();

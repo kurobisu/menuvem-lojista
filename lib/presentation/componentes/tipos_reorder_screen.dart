@@ -1,3 +1,4 @@
+import 'package:collection/collection.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -19,6 +20,11 @@ class _TiposReorderScreenState extends ConsumerState<TiposReorderScreen> {
   List<TipoComponente>? _local;
   bool _hasChanges = false;
   bool _isSaving = false;
+  // ids na ordem recém-salva: o stream demora um instante pra reemitir
+  // depois do UPDATE — sem isso a lista "voltava" pra ordem antiga assim
+  // que _hasChanges virava false. Mantém a ordem local até o stream
+  // confirmar, em vez de descartar na hora.
+  List<int>? _pendingSavedIds;
 
   Future<void> _salvar() async {
     final local = _local;
@@ -27,16 +33,22 @@ class _TiposReorderScreenState extends ConsumerState<TiposReorderScreen> {
     final ordemPorId = {
       for (var i = 0; i < local.length; i++) local[i].id: i,
     };
-    await ref.read(componenteRepositoryProvider).updateOrdensTipos(ordemPorId);
-    if (!mounted) return;
-    setState(() {
-      _isSaving = false;
-      _hasChanges = false;
-      _local = null;
-    });
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Ordem dos tipos salva')),
-    );
+    try {
+      await ref.read(componenteRepositoryProvider).updateOrdensTipos(ordemPorId);
+      if (!mounted) return;
+      setState(() {
+        _isSaving = false;
+        _hasChanges = false;
+        _pendingSavedIds = local.map((t) => t.id).toList();
+      });
+      ScaffoldMessenger.of(context)
+          .showSnackBar(const SnackBar(content: Text('Ordem dos tipos salva')));
+    } catch (e) {
+      if (!mounted) return;
+      setState(() => _isSaving = false);
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text('Não foi possível salvar a ordem: $e')));
+    }
   }
 
   @override
@@ -72,7 +84,13 @@ class _TiposReorderScreenState extends ConsumerState<TiposReorderScreen> {
         loading: () => const Center(child: CircularProgressIndicator(color: purplePrimary)),
         error: (e, _) => Center(child: Text('Erro: $e')),
         data: (tipos) {
-          if (!_hasChanges) _local = List.of(tipos);
+          if (_pendingSavedIds != null) {
+            final currentIds = tipos.map((t) => t.id).toList();
+            final confirmado = const ListEquality<int>().equals(currentIds, _pendingSavedIds) ||
+                currentIds.length != _pendingSavedIds!.length;
+            if (confirmado) _pendingSavedIds = null;
+          }
+          if (_pendingSavedIds == null && !_hasChanges) _local = List.of(tipos);
           final lista = _local!;
 
           if (lista.isEmpty) {

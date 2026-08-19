@@ -134,19 +134,19 @@ class HomeScreen extends ConsumerWidget {
                   const SizedBox(width: 12),
                   Expanded(
                     child: _PrecificacaoCard(
-                      titulo: 'Insumos',
-                      subtitulo: 'Biblioteca e custos',
-                      icon: Icons.inventory_2_outlined,
-                      onTap: () => context.push('/insumos'),
+                      titulo: 'Componentes',
+                      subtitulo: 'Blocos reutilizáveis',
+                      icon: Icons.widgets,
+                      onTap: () => context.push('/componentes'),
                     ),
                   ),
                   const SizedBox(width: 12),
                   Expanded(
                     child: _PrecificacaoCard(
-                      titulo: 'Componentes',
-                      subtitulo: 'Blocos reutilizáveis',
-                      icon: Icons.widgets,
-                      onTap: () => context.push('/componentes'),
+                      titulo: 'Insumos',
+                      subtitulo: 'Biblioteca e custos',
+                      icon: Icons.inventory_2_outlined,
+                      onTap: () => context.push('/insumos'),
                     ),
                   ),
                 ],

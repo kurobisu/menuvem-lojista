@@ -15,6 +15,7 @@ class Insumo {
   final double custoAtual;
   final DateTime dataCriacao;
   final CategoriaInsumo categoria;
+  final String? emoji;
 
   Insumo({
     this.id = 0,
@@ -25,6 +26,7 @@ class Insumo {
     this.custoAtual = 0.0,
     DateTime? dataCriacao,
     this.categoria = CategoriaInsumo.insumo,
+    this.emoji,
   }) : dataCriacao = dataCriacao ?? DateTime.now();
 
   /// Custo por unidade de uso (calculado).
@@ -40,6 +42,8 @@ class Insumo {
     double? custoAtual,
     DateTime? dataCriacao,
     CategoriaInsumo? categoria,
+    String? emoji,
+    bool clearEmoji = false,
   }) {
     return Insumo(
       id: id ?? this.id,
@@ -50,6 +54,7 @@ class Insumo {
       custoAtual: custoAtual ?? this.custoAtual,
       dataCriacao: dataCriacao ?? this.dataCriacao,
       categoria: categoria ?? this.categoria,
+      emoji: clearEmoji ? null : (emoji ?? this.emoji),
     );
   }
 
@@ -62,7 +67,8 @@ class Insumo {
       unidadeUso == other.unidadeUso &&
       fatorConversao == other.fatorConversao &&
       custoAtual == other.custoAtual &&
-      categoria == other.categoria;
+      categoria == other.categoria &&
+      emoji == other.emoji;
 
   @override
   int get hashCode => Object.hash(
@@ -73,5 +79,6 @@ class Insumo {
         fatorConversao,
         custoAtual,
         categoria,
+        emoji,
       );
 }

@@ -42,7 +42,12 @@ class ProdutoDetailActions {
   final Ref ref;
   final int produtoId;
 
-  Future<void> updateProduto(String nome, double margemAlvo, double? precoVenda) {
+  Future<void> updateProduto(
+    String nome,
+    double margemAlvo,
+    double? precoVenda,
+    String? emoji,
+  ) {
     return produto_usecase.saveProduto(
       ref.read(produtoRepositoryProvider),
       Produto(
@@ -50,6 +55,7 @@ class ProdutoDetailActions {
         nome: nome,
         margemAlvoPercentual: margemAlvo,
         precoVendaAtual: precoVenda,
+        emoji: emoji,
       ),
     );
   }

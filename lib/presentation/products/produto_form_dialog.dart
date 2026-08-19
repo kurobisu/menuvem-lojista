@@ -1,16 +1,23 @@
 import 'package:flutter/material.dart';
 
 import '../../domain/model/produto.dart';
+import '../../theme/app_theme.dart';
+import '../components/emoji_picker_field.dart';
+import '../components/emojis.dart';
 import '../components/formatters.dart';
 
 typedef ProdutoFormConfirm = void Function(
   String nome,
   double margemAlvo,
   double? precoVenda,
+  String? emoji,
 );
 
-/// Dialog de criação/edição de produto: nome, margem-alvo (%) e preço de
+/// Folha de criação/edição de produto: nome, margem-alvo (%) e preço de
 /// venda atual (opcional — usado para comparar a margem real com a meta).
+///
+/// O botão Salvar fica no cabeçalho fixo (nunca atrás do teclado) — só o
+/// conteúdo abaixo rola.
 class ProdutoFormDialog extends StatefulWidget {
   const ProdutoFormDialog({super.key, this.produto, required this.onConfirm});
 
@@ -35,6 +42,7 @@ class _ProdutoFormDialogState extends State<ProdutoFormDialog> {
         ? formatarMoeda(widget.produto!.precoVendaAtual!)
         : '',
   );
+  late String? _emoji = widget.produto?.emoji;
 
   @override
   void dispose() {
@@ -54,12 +62,54 @@ class _ProdutoFormDialogState extends State<ProdutoFormDialog> {
         margemVal <= 99.9 &&
         (_precoController.text.trim().isEmpty || precoVal != null);
 
-    return AlertDialog(
-      title: Text(widget.produto == null ? 'Novo Produto' : 'Editar Produto'),
-      content: SingleChildScrollView(
+    return Padding(
+      padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
+      child: SingleChildScrollView(
+        padding: const EdgeInsets.fromLTRB(20, 12, 20, 20),
         child: Column(
           mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
+            Center(
+              child: Container(
+                width: 40,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: outlineLight,
+                  borderRadius: BorderRadius.circular(4),
+                ),
+              ),
+            ),
+            const SizedBox(height: 12),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                TextButton(
+                  onPressed: () => Navigator.of(context).pop(),
+                  child: const Text('Cancelar'),
+                ),
+                Text(widget.produto == null ? 'Novo Produto' : 'Editar Produto',
+                    style: Theme.of(context)
+                        .textTheme
+                        .titleMedium
+                        ?.copyWith(fontWeight: FontWeight.w600)),
+                TextButton(
+                  onPressed: isValid
+                      ? () {
+                          widget.onConfirm(
+                            _nomeController.text.trim(),
+                            margemVal,
+                            _precoController.text.trim().isEmpty ? null : precoVal,
+                            _emoji,
+                          );
+                          Navigator.of(context).pop();
+                        }
+                      : null,
+                  child: const Text('Salvar'),
+                ),
+              ],
+            ),
+            const SizedBox(height: 8),
             TextField(
               controller: _nomeController,
               decoration: const InputDecoration(
@@ -68,6 +118,14 @@ class _ProdutoFormDialogState extends State<ProdutoFormDialog> {
               ),
               textCapitalization: TextCapitalization.sentences,
               onChanged: (_) => setState(() {}),
+            ),
+            const SizedBox(height: 12),
+            Text('Ícone (opcional)', style: Theme.of(context).textTheme.labelMedium),
+            const SizedBox(height: 8),
+            EmojiPickerField(
+              opcoes: emojisProduto,
+              selecionado: _emoji,
+              onChanged: (v) => setState(() => _emoji = v),
             ),
             const SizedBox(height: 12),
             TextField(
@@ -89,25 +147,6 @@ class _ProdutoFormDialogState extends State<ProdutoFormDialog> {
           ],
         ),
       ),
-      actions: [
-        TextButton(
-          onPressed: () => Navigator.of(context).pop(),
-          child: const Text('Cancelar'),
-        ),
-        TextButton(
-          onPressed: isValid
-              ? () {
-                  widget.onConfirm(
-                    _nomeController.text.trim(),
-                    margemVal,
-                    _precoController.text.trim().isEmpty ? null : precoVal,
-                  );
-                  Navigator.of(context).pop();
-                }
-              : null,
-          child: const Text('Salvar'),
-        ),
-      ],
     );
   }
 }

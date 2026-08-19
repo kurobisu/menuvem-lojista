@@ -14,6 +14,7 @@ Produto produtoFromRow(Map<String, dynamic> row) {
     nome: row['nome'] as String,
     margemAlvoPercentual: (row['margem_alvo_percentual'] as num).toDouble(),
     precoVendaAtual: (row['preco_venda_atual'] as num?)?.toDouble(),
+    emoji: row['emoji'] as String?,
     dataCriacao: DateTime.parse(row['data_criacao'] as String),
   );
 }
@@ -23,6 +24,7 @@ Map<String, dynamic> _produtoToInsertRow(Produto produto) {
     'nome': produto.nome,
     'margem_alvo_percentual': produto.margemAlvoPercentual,
     'preco_venda_atual': produto.precoVendaAtual,
+    'emoji': produto.emoji,
   };
 }
 

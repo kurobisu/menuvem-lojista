@@ -74,7 +74,7 @@ class ComponentesController extends Notifier<ComponentesUiState> {
     state = state.copyWith(showFormDialog: false, clearComponenteEmEdicao: true);
   }
 
-  Future<void> save(String nome, String? tipoNome) async {
+  Future<void> save(String nome, String? tipoNome, String? emoji) async {
     final repo = ref.read(componenteRepositoryProvider);
     final tipoId = await usecase.resolveTipoComponenteId(repo, tipoNome);
     final emEdicao = state.componenteEmEdicao;
@@ -86,6 +86,8 @@ class ComponentesController extends Notifier<ComponentesUiState> {
         nome: nome,
         tipoComponenteId: tipoId,
         clearTipoComponenteId: tipoId == null,
+        emoji: emoji,
+        clearEmoji: emoji == null,
       ),
     );
     onHideForm();

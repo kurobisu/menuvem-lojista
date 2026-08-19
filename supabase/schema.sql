@@ -13,6 +13,7 @@ create table if not exists public.insumos (
     fator_conversao double precision not null,
     custo_atual     double precision not null default 0,
     categoria       text not null default 'INSUMO',
+    emoji           text,
     data_criacao    timestamptz not null default now()
 );
 
@@ -54,6 +55,7 @@ create table if not exists public.produtos (
     nome                   text not null,
     margem_alvo_percentual double precision not null default 30,
     preco_venda_atual      double precision,
+    emoji                  text,
     data_criacao           timestamptz not null default now()
 );
 
@@ -89,6 +91,7 @@ create table if not exists public.componentes (
     nome                text not null,
     tipo_componente_id  bigint references public.tipos_componente (id) on delete set null,
     ordem               integer not null default 0,
+    emoji               text,
     data_criacao        timestamptz not null default now()
 );
 
