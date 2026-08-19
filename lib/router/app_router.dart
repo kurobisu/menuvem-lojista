@@ -7,6 +7,7 @@ import 'package:go_router/go_router.dart';
 import '../presentation/auth/login_screen.dart';
 import '../presentation/componentes/componente_detail_screen.dart';
 import '../presentation/componentes/componentes_screen.dart';
+import '../presentation/componentes/tipos_reorder_screen.dart';
 import '../presentation/history/insumo_history_screen.dart';
 import '../presentation/history/price_history_screen.dart';
 import '../presentation/home/home_screen.dart';
@@ -98,6 +99,10 @@ final goRouterProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/componentes',
         builder: (context, state) => const ComponentesScreen(),
+      ),
+      GoRoute(
+        path: '/componentes/tipos',
+        builder: (context, state) => const TiposReorderScreen(),
       ),
       GoRoute(
         path: '/componentes/:componenteId',

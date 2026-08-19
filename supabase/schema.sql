@@ -79,6 +79,7 @@ create table if not exists public.tipos_componente (
     id           bigint generated always as identity primary key,
     user_id      uuid not null default auth.uid() references auth.users (id) on delete cascade,
     nome         text not null,
+    ordem        integer not null default 0,
     data_criacao timestamptz not null default now()
 );
 
@@ -87,6 +88,7 @@ create table if not exists public.componentes (
     user_id             uuid not null default auth.uid() references auth.users (id) on delete cascade,
     nome                text not null,
     tipo_componente_id  bigint references public.tipos_componente (id) on delete set null,
+    ordem               integer not null default 0,
     data_criacao        timestamptz not null default now()
 );
 

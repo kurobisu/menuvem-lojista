@@ -27,8 +27,14 @@ class InsumosScreen extends ConsumerWidget {
 
     ref.listen(insumosControllerProvider.select((s) => s.showFormDialog), (prev, next) {
       if (next) {
-        showDialog<void>(
+        showModalBottomSheet<void>(
           context: context,
+          isScrollControlled: true,
+          useSafeArea: true,
+          backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+          shape: const RoundedRectangleBorder(
+            borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+          ),
           builder: (_) => InsumoFormDialog(
             insumo: ref.read(insumosControllerProvider).insumoEmEdicao,
             onConfirm: ({

@@ -9,16 +9,20 @@
 ///
 /// [tipoComponenteId]: tipo cadastrado livremente pelo usuário (ver
 /// [TipoComponente]), opcional — organiza a biblioteca e os filtros.
+/// [ordem]: posição de exibição na biblioteca, ajustável arrastando na tela
+/// de Componentes (só disponível com o filtro "Todos" ativo).
 class Componente {
   final int id;
   final String nome;
   final int? tipoComponenteId;
+  final int ordem;
   final DateTime dataCriacao;
 
   Componente({
     this.id = 0,
     required this.nome,
     this.tipoComponenteId,
+    this.ordem = 0,
     DateTime? dataCriacao,
   }) : dataCriacao = dataCriacao ?? DateTime.now();
 
@@ -27,12 +31,14 @@ class Componente {
     String? nome,
     int? tipoComponenteId,
     bool clearTipoComponenteId = false,
+    int? ordem,
   }) {
     return Componente(
       id: id ?? this.id,
       nome: nome ?? this.nome,
       tipoComponenteId:
           clearTipoComponenteId ? null : (tipoComponenteId ?? this.tipoComponenteId),
+      ordem: ordem ?? this.ordem,
       dataCriacao: dataCriacao,
     );
   }

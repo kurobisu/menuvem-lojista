@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 
 import '../../domain/model/categoria_insumo.dart';
 import '../../domain/model/insumo.dart';
+import '../../theme/app_theme.dart';
 import '../components/formatters.dart';
+import '../components/unidades_medida.dart';
 
 typedef InsumoFormConfirm = void Function({
   required String nome,
@@ -13,9 +15,58 @@ typedef InsumoFormConfirm = void Function({
   required double custoAtual,
 });
 
-/// Dialog de criação/edição de insumo da biblioteca: nome, categoria
+/// Normaliza pro valor canônico do preset (comparação sem diferenciar
+/// maiúsculas/minúsculas) ou devolve o valor bruto se não bater com nenhum
+/// preset — caso de insumos cadastrados antes da lista fechada existir.
+String? _normalizarUnidade(String? valor) {
+  if (valor == null || valor.isEmpty) return null;
+  for (final u in unidadesMedida) {
+    if (u.valor.toLowerCase() == valor.toLowerCase()) return u.valor;
+  }
+  return valor;
+}
+
+List<DropdownMenuItem<String>> _itensUnidade(String? valorAtual) {
+  final conhecidos = unidadesMedida.map((u) => u.valor.toLowerCase()).toSet();
+  final items = [
+    for (final u in unidadesMedida)
+      DropdownMenuItem(
+        value: u.valor,
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(u.icone, size: 16),
+            const SizedBox(width: 6),
+            Text(u.rotulo),
+          ],
+        ),
+      ),
+  ];
+  if (valorAtual != null && !conhecidos.contains(valorAtual.toLowerCase())) {
+    items.insert(
+      0,
+      DropdownMenuItem(
+        value: valorAtual,
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(iconeUnidade(valorAtual), size: 16),
+            const SizedBox(width: 6),
+            Text(valorAtual),
+          ],
+        ),
+      ),
+    );
+  }
+  return items;
+}
+
+/// Folha de criação/edição de insumo da biblioteca: nome, categoria
 /// (insumo/embalagem), unidade de compra, unidade de uso, fator de conversão
 /// e custo atual (override manual do preço vindo do histórico de compras).
+///
+/// O botão Salvar fica no cabeçalho fixo (nunca atrás do teclado) — só o
+/// conteúdo abaixo rola.
 class InsumoFormDialog extends StatefulWidget {
   const InsumoFormDialog({
     super.key,
@@ -33,10 +84,8 @@ class InsumoFormDialog extends StatefulWidget {
 class _InsumoFormDialogState extends State<InsumoFormDialog> {
   late final _nomeController = TextEditingController(text: widget.insumo?.nome ?? '');
   late CategoriaInsumo _categoria = widget.insumo?.categoria ?? CategoriaInsumo.insumo;
-  late final _unidadeCompraController =
-      TextEditingController(text: widget.insumo?.unidadeCompra ?? '');
-  late final _unidadeUsoController =
-      TextEditingController(text: widget.insumo?.unidadeUso ?? '');
+  late String? _unidadeCompra = _normalizarUnidade(widget.insumo?.unidadeCompra);
+  late String? _unidadeUso = _normalizarUnidade(widget.insumo?.unidadeUso);
   late final _fatorController = TextEditingController(
     text: widget.insumo == null
         ? ''
@@ -53,8 +102,6 @@ class _InsumoFormDialogState extends State<InsumoFormDialog> {
   @override
   void dispose() {
     _nomeController.dispose();
-    _unidadeCompraController.dispose();
-    _unidadeUsoController.dispose();
     _fatorController.dispose();
     _custoController.dispose();
     super.dispose();
@@ -65,18 +112,62 @@ class _InsumoFormDialogState extends State<InsumoFormDialog> {
     final fatorVal = parseDecimalPtBr(_fatorController.text);
     final custoVal = parseDecimalPtBr(_custoController.text);
     final isValid = _nomeController.text.trim().isNotEmpty &&
-        _unidadeCompraController.text.trim().isNotEmpty &&
-        _unidadeUsoController.text.trim().isNotEmpty &&
+        _unidadeCompra != null &&
+        _unidadeUso != null &&
         fatorVal != null &&
         fatorVal > 0 &&
         (_custoController.text.trim().isEmpty || custoVal != null);
 
-    return AlertDialog(
-      title: Text(widget.insumo == null ? 'Novo Insumo' : 'Editar Insumo'),
-      content: SingleChildScrollView(
+    return Padding(
+      padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
+      child: SingleChildScrollView(
+        padding: const EdgeInsets.fromLTRB(20, 12, 20, 20),
         child: Column(
           mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
+            Center(
+              child: Container(
+                width: 40,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: outlineLight,
+                  borderRadius: BorderRadius.circular(4),
+                ),
+              ),
+            ),
+            const SizedBox(height: 12),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                TextButton(
+                  onPressed: () => Navigator.of(context).pop(),
+                  child: const Text('Cancelar'),
+                ),
+                Text(widget.insumo == null ? 'Novo Insumo' : 'Editar Insumo',
+                    style: Theme.of(context)
+                        .textTheme
+                        .titleMedium
+                        ?.copyWith(fontWeight: FontWeight.w600)),
+                TextButton(
+                  onPressed: isValid
+                      ? () {
+                          widget.onConfirm(
+                            nome: _nomeController.text.trim(),
+                            categoria: _categoria,
+                            unidadeCompra: _unidadeCompra!,
+                            unidadeUso: _unidadeUso!,
+                            fatorConversao: fatorVal,
+                            custoAtual: custoVal ?? 0.0,
+                          );
+                          Navigator.of(context).pop();
+                        }
+                      : null,
+                  child: const Text('Salvar'),
+                ),
+              ],
+            ),
+            const SizedBox(height: 8),
             TextField(
               controller: _nomeController,
               decoration: const InputDecoration(
@@ -108,24 +199,24 @@ class _InsumoFormDialogState extends State<InsumoFormDialog> {
             Row(
               children: [
                 Expanded(
-                  child: TextField(
-                    controller: _unidadeCompraController,
-                    decoration: const InputDecoration(
-                      labelText: 'Un. compra',
-                      hintText: 'kg',
-                    ),
-                    onChanged: (_) => setState(() {}),
+                  child: DropdownButtonFormField<String>(
+                    initialValue: _unidadeCompra,
+                    isExpanded: true,
+                    decoration: const InputDecoration(labelText: 'Un. compra'),
+                    hint: const Text('Selecionar'),
+                    items: _itensUnidade(_unidadeCompra),
+                    onChanged: (v) => setState(() => _unidadeCompra = v),
                   ),
                 ),
                 const SizedBox(width: 12),
                 Expanded(
-                  child: TextField(
-                    controller: _unidadeUsoController,
-                    decoration: const InputDecoration(
-                      labelText: 'Un. uso',
-                      hintText: 'g',
-                    ),
-                    onChanged: (_) => setState(() {}),
+                  child: DropdownButtonFormField<String>(
+                    initialValue: _unidadeUso,
+                    isExpanded: true,
+                    decoration: const InputDecoration(labelText: 'Un. uso'),
+                    hint: const Text('Selecionar'),
+                    items: _itensUnidade(_unidadeUso),
+                    onChanged: (v) => setState(() => _unidadeUso = v),
                   ),
                 ),
               ],
@@ -155,28 +246,6 @@ class _InsumoFormDialogState extends State<InsumoFormDialog> {
           ],
         ),
       ),
-      actions: [
-        TextButton(
-          onPressed: () => Navigator.of(context).pop(),
-          child: const Text('Cancelar'),
-        ),
-        TextButton(
-          onPressed: isValid
-              ? () {
-                  widget.onConfirm(
-                    nome: _nomeController.text.trim(),
-                    categoria: _categoria,
-                    unidadeCompra: _unidadeCompraController.text.trim(),
-                    unidadeUso: _unidadeUsoController.text.trim(),
-                    fatorConversao: fatorVal,
-                    custoAtual: custoVal ?? 0.0,
-                  );
-                  Navigator.of(context).pop();
-                }
-              : null,
-          child: const Text('Salvar'),
-        ),
-      ],
     );
   }
 }

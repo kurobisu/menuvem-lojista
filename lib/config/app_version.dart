@@ -7,8 +7,8 @@
 /// (ver a seção "Toolchain notes" do AGENTS.md) e não pode ser verificado
 /// automaticamente por um agente. O custo dessa escolha é ter que atualizar
 /// os dois lugares ao subir a versão.
-const String appVersion = '1.1.1';
-const String appBuildNumber = '3';
+const String appVersion = '1.2.0';
+const String appBuildNumber = '4';
 
 /// Rótulo curto usado na UI, ex.: `v1.1.0 (2)`.
 const String appVersionLabel = 'v$appVersion ($appBuildNumber)';

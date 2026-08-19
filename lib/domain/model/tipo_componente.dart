@@ -3,14 +3,19 @@
 /// organizar a biblioteca de componentes. Não é mais uma lista fixa: o
 /// usuário digita o nome ao criar/editar um componente e o tipo é reutilizado
 /// (por nome, sem diferenciar maiúsculas/minúsculas) nas próximas vezes.
+///
+/// [ordem]: posição de exibição, ajustável arrastando na tela de reordenar
+/// tipos (ver `tipos_reorder_screen.dart`).
 class TipoComponente {
   final int id;
   final String nome;
+  final int ordem;
   final DateTime dataCriacao;
 
   TipoComponente({
     this.id = 0,
     required this.nome,
+    this.ordem = 0,
     DateTime? dataCriacao,
   }) : dataCriacao = dataCriacao ?? DateTime.now();
 }

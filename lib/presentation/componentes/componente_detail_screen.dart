@@ -171,27 +171,45 @@ class ComponenteDetailScreen extends ConsumerWidget {
   }
 
   void _showAddItemDialog(BuildContext context, WidgetRef ref, ComponenteDetailActions actions) {
-    showDialog<void>(
+    showModalBottomSheet<void>(
       context: context,
-      builder: (_) => _AddInsumoToComponenteDialog(onAdd: actions.addItem),
+      isScrollControlled: true,
+      useSafeArea: true,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      builder: (_) => _AddInsumoToComponenteSheet(onAdd: actions.addItem),
     );
   }
 }
 
-class _AddInsumoToComponenteDialog extends ConsumerStatefulWidget {
-  const _AddInsumoToComponenteDialog({required this.onAdd});
+/// Folha de adicionar um insumo já cadastrado a um componente. O botão
+/// "Adicionar" fica sempre no cabeçalho fixo (nunca atrás do teclado) — só o
+/// conteúdo abaixo rola, seguindo o mesmo padrão do produto_item_sheet do
+/// CofreNuvem.
+class _AddInsumoToComponenteSheet extends ConsumerStatefulWidget {
+  const _AddInsumoToComponenteSheet({required this.onAdd});
   final Future<void> Function(int insumoId, double quantidade, double perda) onAdd;
 
   @override
-  ConsumerState<_AddInsumoToComponenteDialog> createState() =>
-      _AddInsumoToComponenteDialogState();
+  ConsumerState<_AddInsumoToComponenteSheet> createState() =>
+      _AddInsumoToComponenteSheetState();
 }
 
-class _AddInsumoToComponenteDialogState extends ConsumerState<_AddInsumoToComponenteDialog> {
+class _AddInsumoToComponenteSheetState extends ConsumerState<_AddInsumoToComponenteSheet> {
   Insumo? _selected;
   final _searchController = TextEditingController();
   final _quantidadeController = TextEditingController();
   final _perdaController = TextEditingController(text: '0');
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    _quantidadeController.dispose();
+    _perdaController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -200,13 +218,49 @@ class _AddInsumoToComponenteDialogState extends ConsumerState<_AddInsumoToCompon
     final perdaVal = parseDecimalPtBr(_perdaController.text) ?? 0;
     final isValid = _selected != null && quantidadeVal != null && quantidadeVal > 0;
 
-    return AlertDialog(
-      title: const Text('Adicionar insumo ao componente'),
-      content: SizedBox(
-        width: double.maxFinite,
+    return Padding(
+      padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
+      child: SingleChildScrollView(
+        padding: const EdgeInsets.fromLTRB(20, 12, 20, 20),
         child: Column(
           mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
+            Center(
+              child: Container(
+                width: 40,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: outlineLight,
+                  borderRadius: BorderRadius.circular(4),
+                ),
+              ),
+            ),
+            const SizedBox(height: 12),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                TextButton(
+                  onPressed: () => Navigator.of(context).pop(),
+                  child: const Text('Cancelar'),
+                ),
+                Text('Adicionar insumo',
+                    style: Theme.of(context)
+                        .textTheme
+                        .titleMedium
+                        ?.copyWith(fontWeight: FontWeight.w600)),
+                TextButton(
+                  onPressed: isValid
+                      ? () {
+                          widget.onAdd(_selected!.id, quantidadeVal, perdaVal);
+                          Navigator.of(context).pop();
+                        }
+                      : null,
+                  child: const Text('Adicionar'),
+                ),
+              ],
+            ),
+            const SizedBox(height: 8),
             if (_selected == null) ...[
               TextField(
                 controller: _searchController,
@@ -215,7 +269,7 @@ class _AddInsumoToComponenteDialogState extends ConsumerState<_AddInsumoToCompon
               ),
               const SizedBox(height: 8),
               ConstrainedBox(
-                constraints: const BoxConstraints(maxHeight: 200),
+                constraints: const BoxConstraints(maxHeight: 260),
                 child: insumosAsync.maybeWhen(
                   data: (insumos) {
                     final q = _searchController.text.trim().toLowerCase();
@@ -271,18 +325,6 @@ class _AddInsumoToComponenteDialogState extends ConsumerState<_AddInsumoToCompon
           ],
         ),
       ),
-      actions: [
-        TextButton(onPressed: () => Navigator.of(context).pop(), child: const Text('Cancelar')),
-        TextButton(
-          onPressed: isValid
-              ? () {
-                  widget.onAdd(_selected!.id, quantidadeVal, perdaVal);
-                  Navigator.of(context).pop();
-                }
-              : null,
-          child: const Text('Adicionar'),
-        ),
-      ],
     );
   }
 }

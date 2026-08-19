@@ -13,12 +13,13 @@ Componente componenteFromRow(Map<String, dynamic> row) {
     id: row['id'] as int,
     nome: row['nome'] as String,
     tipoComponenteId: row['tipo_componente_id'] as int?,
+    ordem: (row['ordem'] as num? ?? 0).toInt(),
     dataCriacao: DateTime.parse(row['data_criacao'] as String),
   );
 }
 
 Map<String, dynamic> _componenteToInsertRow(Componente c) {
-  return {'nome': c.nome, 'tipo_componente_id': c.tipoComponenteId};
+  return {'nome': c.nome, 'tipo_componente_id': c.tipoComponenteId, 'ordem': c.ordem};
 }
 
 ItemComponente _itemComponenteFromRow(Map<String, dynamic> row) {
@@ -44,6 +45,7 @@ TipoComponente _tipoComponenteFromRow(Map<String, dynamic> row) {
   return TipoComponente(
     id: row['id'] as int,
     nome: row['nome'] as String,
+    ordem: (row['ordem'] as num? ?? 0).toInt(),
     dataCriacao: DateTime.parse(row['data_criacao'] as String),
   );
 }
@@ -57,7 +59,7 @@ class ComponenteRepository {
     return _client
         .from(_tableComponentes)
         .stream(primaryKey: ['id'])
-        .order('nome')
+        .order('ordem')
         .map((rows) => rows.map(componenteFromRow).toList());
   }
 
@@ -105,6 +107,18 @@ class ComponenteRepository {
     return _client.from(_tableComponentes).delete().eq('id', componente.id);
   }
 
+  /// Grava a nova ordem de exibição de vários componentes de uma vez (tela
+  /// de Componentes, arrastar-e-soltar com o filtro "Todos" ativo).
+  Future<void> updateOrdensComponentes(Map<int, int> ordemPorId) {
+    return Future.wait(
+      ordemPorId.entries.map(
+        (e) => _client
+            .from(_tableComponentes)
+            .update({'ordem': e.value}).eq('id', e.key),
+      ),
+    );
+  }
+
   Future<int> insertItemComponente(ItemComponente item) async {
     final row = await _client
         .from(_tableItens)
@@ -142,7 +156,7 @@ class ComponenteRepository {
     return _client
         .from(_tableTipos)
         .stream(primaryKey: ['id'])
-        .order('nome')
+        .order('ordem')
         .map((rows) => rows.map(_tipoComponenteFromRow).toList());
   }
 
@@ -151,12 +165,27 @@ class ComponenteRepository {
     return rows.map(_tipoComponenteFromRow).toList();
   }
 
-  Future<int> insertTipo(String nome) async {
+  Future<int> insertTipo(String nome, {int ordem = 0}) async {
     final row = await _client
         .from(_tableTipos)
-        .insert({'nome': nome})
+        .insert({'nome': nome, 'ordem': ordem})
         .select()
         .single();
     return row['id'] as int;
+  }
+
+  Future<void> deleteTipo(int id) {
+    return _client.from(_tableTipos).delete().eq('id', id);
+  }
+
+  /// Grava a nova ordem de vários tipos de componente de uma vez (tela de
+  /// reordenar tipos).
+  Future<void> updateOrdensTipos(Map<int, int> ordemPorId) {
+    return Future.wait(
+      ordemPorId.entries.map(
+        (e) =>
+            _client.from(_tableTipos).update({'ordem': e.value}).eq('id', e.key),
+      ),
+    );
   }
 }

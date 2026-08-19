@@ -35,7 +35,7 @@ Future<int?> resolveTipoComponenteId(
       .firstOrNull;
   if (existente != null) return existente.id;
 
-  return repository.insertTipo(nome);
+  return repository.insertTipo(nome, ordem: existentes.length);
 }
 
 /// Adiciona ou atualiza um item de componente (id == 0 → insert).
