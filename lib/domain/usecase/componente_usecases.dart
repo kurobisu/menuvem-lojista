@@ -1,3 +1,5 @@
+import 'package:collection/collection.dart';
+
 import '../../data/componente_repository.dart';
 import '../../data/produto_repository.dart';
 import '../model/componente.dart';
@@ -14,6 +16,26 @@ Future<int> saveComponente(
   }
   await repository.updateComponente(componente);
   return componente.id;
+}
+
+/// Resolve o nome de tipo digitado pelo usuário para o id do
+/// [TipoComponente] correspondente, reaproveitando um já cadastrado (nome
+/// igual, sem diferenciar maiúsculas/minúsculas) ou criando um novo.
+/// Retorna null se [tipoNome] for vazio (componente sem tipo).
+Future<int?> resolveTipoComponenteId(
+  ComponenteRepository repository,
+  String? tipoNome,
+) async {
+  final nome = tipoNome?.trim();
+  if (nome == null || nome.isEmpty) return null;
+
+  final existentes = await repository.getTiposOnce();
+  final existente = existentes
+      .where((t) => t.nome.toLowerCase() == nome.toLowerCase())
+      .firstOrNull;
+  if (existente != null) return existente.id;
+
+  return repository.insertTipo(nome);
 }
 
 /// Adiciona ou atualiza um item de componente (id == 0 → insert).

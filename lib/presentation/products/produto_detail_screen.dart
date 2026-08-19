@@ -407,19 +407,21 @@ class _ComponenteNoProdutoCard extends StatelessWidget {
                         style: Theme.of(context).textTheme.titleSmall),
                     Row(
                       children: [
-                        Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                          decoration: BoxDecoration(
-                            color: purpleContainer,
-                            borderRadius: BorderRadius.circular(50),
+                        if (item.tipoNome != null) ...[
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                            decoration: BoxDecoration(
+                              color: purpleContainer,
+                              borderRadius: BorderRadius.circular(50),
+                            ),
+                            child: Text(item.tipoNome!,
+                                style: Theme.of(context)
+                                    .textTheme
+                                    .labelSmall
+                                    ?.copyWith(color: purpleOnContainer)),
                           ),
-                          child: Text(formatarTipo(item.componente.tipo),
-                              style: Theme.of(context)
-                                  .textTheme
-                                  .labelSmall
-                                  ?.copyWith(color: purpleOnContainer)),
-                        ),
-                        const SizedBox(width: 6),
+                          const SizedBox(width: 6),
+                        ],
                         Expanded(
                           child: Text(
                             '${item.quantidadeItens} insumo(s) · ${descreverMultiplicador(item.vinculo.multiplicador)}',
@@ -690,7 +692,9 @@ class _AddComponenteDialog extends ConsumerWidget {
                       (c) => ListTile(
                         title: Text(c.componente.nome),
                         subtitle: Text(
-                          '${formatarTipo(c.componente.tipo)} · R\$ ${formatarMoeda(c.custo)}',
+                          c.tipoNome == null
+                              ? 'R\$ ${formatarMoeda(c.custo)}'
+                              : '${c.tipoNome} · R\$ ${formatarMoeda(c.custo)}',
                         ),
                         onTap: () {
                           Navigator.of(context).pop();

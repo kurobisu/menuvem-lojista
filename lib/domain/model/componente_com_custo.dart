@@ -7,8 +7,13 @@ import 'item_componente_com_insumo.dart';
 class ComponenteComCusto {
   final Componente componente;
   final List<ItemComponenteComInsumo> itens;
+  final String? tipoNome;
 
-  const ComponenteComCusto({required this.componente, required this.itens});
+  const ComponenteComCusto({
+    required this.componente,
+    required this.itens,
+    this.tipoNome,
+  });
 
   double get custo => itens.fold(0.0, (sum, item) => sum + item.custo);
 

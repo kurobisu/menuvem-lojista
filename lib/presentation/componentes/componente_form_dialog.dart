@@ -1,36 +1,47 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../domain/model/componente.dart';
-import '../../domain/model/tipo_componente.dart';
-import '../components/multiplicador_utils.dart';
+import 'componentes_controller.dart' show tiposComponenteProvider;
 
-typedef ComponenteFormConfirm = void Function(String nome, TipoComponente tipo);
+typedef ComponenteFormConfirm = void Function(String nome, String? tipoNome);
 
-/// Dialog de criação/edição de componente: nome + tipo (Massa, Sabor,
-/// Embalagem, Outro). O tipo organiza a biblioteca e sugere divisões.
-class ComponenteFormDialog extends StatefulWidget {
-  const ComponenteFormDialog({super.key, this.componente, required this.onConfirm});
+/// Dialog de criação/edição de componente: nome + tipo. O tipo é digitado
+/// livremente e reaproveitado (sugestão de autocompletar) entre os
+/// componentes já cadastrados pelo usuário — não é mais uma lista fixa.
+class ComponenteFormDialog extends ConsumerStatefulWidget {
+  const ComponenteFormDialog({
+    super.key,
+    this.componente,
+    this.tipoNomeAtual,
+    required this.onConfirm,
+  });
 
   final Componente? componente;
+  final String? tipoNomeAtual;
   final ComponenteFormConfirm onConfirm;
 
   @override
-  State<ComponenteFormDialog> createState() => _ComponenteFormDialogState();
+  ConsumerState<ComponenteFormDialog> createState() => _ComponenteFormDialogState();
 }
 
-class _ComponenteFormDialogState extends State<ComponenteFormDialog> {
+class _ComponenteFormDialogState extends ConsumerState<ComponenteFormDialog> {
   late final _nomeController = TextEditingController(text: widget.componente?.nome ?? '');
-  late TipoComponente _tipo = widget.componente?.tipo ?? TipoComponente.outro;
+  late final _tipoController = TextEditingController(text: widget.tipoNomeAtual ?? '');
 
   @override
   void dispose() {
     _nomeController.dispose();
+    _tipoController.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
     final isValid = _nomeController.text.trim().isNotEmpty;
+    final tiposAsync = ref.watch(tiposComponenteProvider);
+    final nomesExistentes =
+        tiposAsync.maybeWhen(data: (tipos) => tipos.map((t) => t.nome).toList(), orElse: () => const <String>[]);
 
     return AlertDialog(
       title: Text(widget.componente == null ? 'Novo Componente' : 'Editar Componente'),
@@ -49,20 +60,24 @@ class _ComponenteFormDialogState extends State<ComponenteFormDialog> {
               onChanged: (_) => setState(() {}),
             ),
             const SizedBox(height: 12),
-            Text('Tipo', style: Theme.of(context).textTheme.labelMedium),
-            const SizedBox(height: 8),
-            Wrap(
-              spacing: 8,
-              runSpacing: 8,
-              children: TipoComponente.values
-                  .map(
-                    (opcao) => ChoiceChip(
-                      label: Text(formatarTipo(opcao)),
-                      selected: _tipo == opcao,
-                      onSelected: (_) => setState(() => _tipo = opcao),
-                    ),
-                  )
-                  .toList(),
+            Autocomplete<String>(
+              textEditingController: _tipoController,
+              optionsBuilder: (value) {
+                if (value.text.trim().isEmpty) return nomesExistentes;
+                final q = value.text.toLowerCase();
+                return nomesExistentes.where((n) => n.toLowerCase().contains(q));
+              },
+              fieldViewBuilder: (context, controller, focusNode, onSubmitted) {
+                return TextField(
+                  controller: controller,
+                  focusNode: focusNode,
+                  decoration: const InputDecoration(
+                    labelText: 'Tipo (opcional)',
+                    hintText: 'Ex.: Massa, Sabor, Embalagem — crie o seu',
+                  ),
+                  textCapitalization: TextCapitalization.sentences,
+                );
+              },
             ),
           ],
         ),
@@ -75,7 +90,8 @@ class _ComponenteFormDialogState extends State<ComponenteFormDialog> {
         TextButton(
           onPressed: isValid
               ? () {
-                  widget.onConfirm(_nomeController.text.trim(), _tipo);
+                  final tipo = _tipoController.text.trim();
+                  widget.onConfirm(_nomeController.text.trim(), tipo.isEmpty ? null : tipo);
                   Navigator.of(context).pop();
                 }
               : null,

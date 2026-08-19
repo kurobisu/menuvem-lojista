@@ -2,11 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
-import '../../domain/model/tipo_componente.dart';
 import '../../theme/app_theme.dart';
 import '../components/empty_state.dart';
 import '../components/formatters.dart';
-import '../components/multiplicador_utils.dart';
 import 'componente_form_dialog.dart';
 import 'componentes_controller.dart';
 
@@ -16,6 +14,7 @@ class ComponentesScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final componentesAsync = ref.watch(componentesLibraryProvider);
+    final tiposAsync = ref.watch(tiposComponenteProvider);
     final uiState = ref.watch(componentesControllerProvider);
     final controller = ref.read(componentesControllerProvider.notifier);
 
@@ -77,15 +76,15 @@ class ComponentesScreen extends ConsumerWidget {
                 children: [
                   FilterChip(
                     label: const Text('Todos'),
-                    selected: uiState.filtroTipo == null,
+                    selected: uiState.filtroTipoId == null,
                     onSelected: (_) => controller.onFiltroChange(null),
                   ),
                   const SizedBox(width: 8),
-                  for (final tipo in TipoComponente.values) ...[
+                  for (final tipo in tiposAsync.asData?.value ?? const []) ...[
                     FilterChip(
-                      label: Text(formatarTipo(tipo)),
-                      selected: uiState.filtroTipo == tipo,
-                      onSelected: (_) => controller.onFiltroChange(tipo),
+                      label: Text(tipo.nome),
+                      selected: uiState.filtroTipoId == tipo.id,
+                      onSelected: (_) => controller.onFiltroChange(tipo.id),
                     ),
                     const SizedBox(width: 8),
                   ],
@@ -99,9 +98,11 @@ class ComponentesScreen extends ConsumerWidget {
                   const Center(child: CircularProgressIndicator(color: purplePrimary)),
               error: (e, _) => Center(child: Text('Erro: $e')),
               data: (componentes) {
-                final filtrados = uiState.filtroTipo == null
+                final filtrados = uiState.filtroTipoId == null
                     ? componentes
-                    : componentes.where((c) => c.componente.tipo == uiState.filtroTipo).toList();
+                    : componentes
+                        .where((c) => c.componente.tipoComponenteId == uiState.filtroTipoId)
+                        .toList();
                 if (filtrados.isEmpty) {
                   return const EmptyState(
                     icon: Icons.widgets,
@@ -137,22 +138,24 @@ class ComponentesScreen extends ConsumerWidget {
                                             style: Theme.of(context).textTheme.titleSmall,
                                           ),
                                         ),
-                                        const SizedBox(width: 8),
-                                        Container(
-                                          padding: const EdgeInsets.symmetric(
-                                              horizontal: 8, vertical: 2),
-                                          decoration: BoxDecoration(
-                                            color: purpleContainer,
-                                            borderRadius: BorderRadius.circular(50),
+                                        if (item.tipoNome != null) ...[
+                                          const SizedBox(width: 8),
+                                          Container(
+                                            padding: const EdgeInsets.symmetric(
+                                                horizontal: 8, vertical: 2),
+                                            decoration: BoxDecoration(
+                                              color: purpleContainer,
+                                              borderRadius: BorderRadius.circular(50),
+                                            ),
+                                            child: Text(
+                                              item.tipoNome!,
+                                              style: Theme.of(context)
+                                                  .textTheme
+                                                  .labelSmall
+                                                  ?.copyWith(color: purpleOnContainer),
+                                            ),
                                           ),
-                                          child: Text(
-                                            formatarTipo(item.componente.tipo),
-                                            style: Theme.of(context)
-                                                .textTheme
-                                                .labelSmall
-                                                ?.copyWith(color: purpleOnContainer),
-                                          ),
-                                        ),
+                                        ],
                                       ],
                                     ),
                                     Text(

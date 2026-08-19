@@ -8,15 +8,21 @@ import '../../providers/repository_providers.dart';
 
 export '../products/produto_detail_controller.dart' show componentesLibraryProvider;
 
+/// Tipos de componente já cadastrados pelo usuário (usados como sugestão de
+/// autocompletar ao criar/editar um componente).
+final tiposComponenteProvider = StreamProvider<List<TipoComponente>>((ref) {
+  return ref.watch(componenteRepositoryProvider).getAllTipos();
+});
+
 class ComponentesUiState {
-  final TipoComponente? filtroTipo;
+  final int? filtroTipoId;
   final bool showFormDialog;
   final Componente? componenteEmEdicao;
   final ComponenteComCusto? componenteParaExcluir;
   final String? error;
 
   const ComponentesUiState({
-    this.filtroTipo,
+    this.filtroTipoId,
     this.showFormDialog = false,
     this.componenteEmEdicao,
     this.componenteParaExcluir,
@@ -24,7 +30,7 @@ class ComponentesUiState {
   });
 
   ComponentesUiState copyWith({
-    TipoComponente? filtroTipo,
+    int? filtroTipoId,
     bool clearFiltro = false,
     bool? showFormDialog,
     Componente? componenteEmEdicao,
@@ -35,7 +41,7 @@ class ComponentesUiState {
     bool clearError = false,
   }) {
     return ComponentesUiState(
-      filtroTipo: clearFiltro ? null : (filtroTipo ?? this.filtroTipo),
+      filtroTipoId: clearFiltro ? null : (filtroTipoId ?? this.filtroTipoId),
       showFormDialog: showFormDialog ?? this.showFormDialog,
       componenteEmEdicao:
           clearComponenteEmEdicao ? null : (componenteEmEdicao ?? this.componenteEmEdicao),
@@ -51,8 +57,8 @@ class ComponentesController extends Notifier<ComponentesUiState> {
   @override
   ComponentesUiState build() => const ComponentesUiState();
 
-  void onFiltroChange(TipoComponente? tipo) {
-    state = state.copyWith(filtroTipo: tipo, clearFiltro: tipo == null);
+  void onFiltroChange(int? tipoId) {
+    state = state.copyWith(filtroTipoId: tipoId, clearFiltro: tipoId == null);
   }
 
   void onShowForm([Componente? componente]) {
@@ -67,12 +73,18 @@ class ComponentesController extends Notifier<ComponentesUiState> {
     state = state.copyWith(showFormDialog: false, clearComponenteEmEdicao: true);
   }
 
-  Future<void> save(String nome, TipoComponente tipo) async {
+  Future<void> save(String nome, String? tipoNome) async {
+    final repo = ref.read(componenteRepositoryProvider);
+    final tipoId = await usecase.resolveTipoComponenteId(repo, tipoNome);
     final emEdicao = state.componenteEmEdicao;
-    final base = emEdicao ?? Componente(nome: nome, tipo: tipo);
+    final base = emEdicao ?? Componente(nome: nome);
     await usecase.saveComponente(
-      ref.read(componenteRepositoryProvider),
-      base.copyWith(nome: nome, tipo: tipo),
+      repo,
+      base.copyWith(
+        nome: nome,
+        tipoComponenteId: tipoId,
+        clearTipoComponenteId: tipoId == null,
+      ),
     );
     onHideForm();
   }

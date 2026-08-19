@@ -11,11 +11,13 @@ class ProdutoComponenteCompleto {
   final ProdutoComponente vinculo;
   final Componente componente;
   final List<ItemComponenteComInsumo> itens;
+  final String? tipoNome;
 
   const ProdutoComponenteCompleto({
     required this.vinculo,
     required this.componente,
     required this.itens,
+    this.tipoNome,
   });
 
   double get custo =>

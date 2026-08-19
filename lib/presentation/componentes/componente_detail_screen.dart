@@ -38,6 +38,7 @@ class ComponenteDetailScreen extends ConsumerWidget {
                       context: context,
                       builder: (_) => ComponenteFormDialog(
                         componente: item.componente,
+                        tipoNomeAtual: item.tipoNome,
                         onConfirm: actions.updateComponente,
                       ),
                     ),

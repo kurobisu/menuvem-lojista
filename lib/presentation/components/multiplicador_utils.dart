@@ -1,19 +1,3 @@
-import '../../domain/model/tipo_componente.dart';
-
-/// Rótulo pt-BR de um tipo de componente.
-String formatarTipo(TipoComponente tipo) {
-  switch (tipo) {
-    case TipoComponente.massa:
-      return 'Massa';
-    case TipoComponente.sabor:
-      return 'Sabor';
-    case TipoComponente.embalagem:
-      return 'Embalagem';
-    case TipoComponente.outro:
-      return 'Outro';
-  }
-}
-
 /// Converte um multiplicador no divisor (n) correspondente para edição.
 String divisorDeMultiplicador(double multiplicador) {
   if (multiplicador <= 0) return '1';

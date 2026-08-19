@@ -6,21 +6,19 @@ import '../domain/model/tipo_componente.dart';
 
 const _tableComponentes = 'componentes';
 const _tableItens = 'itens_componente';
+const _tableTipos = 'tipos_componente';
 
 Componente componenteFromRow(Map<String, dynamic> row) {
   return Componente(
     id: row['id'] as int,
     nome: row['nome'] as String,
-    tipo: TipoComponente.values.firstWhere(
-      (t) => t.name.toUpperCase() == (row['tipo'] as String? ?? 'OUTRO'),
-      orElse: () => TipoComponente.outro,
-    ),
+    tipoComponenteId: row['tipo_componente_id'] as int?,
     dataCriacao: DateTime.parse(row['data_criacao'] as String),
   );
 }
 
 Map<String, dynamic> _componenteToInsertRow(Componente c) {
-  return {'nome': c.nome, 'tipo': c.tipo.name.toUpperCase()};
+  return {'nome': c.nome, 'tipo_componente_id': c.tipoComponenteId};
 }
 
 ItemComponente _itemComponenteFromRow(Map<String, dynamic> row) {
@@ -40,6 +38,14 @@ Map<String, dynamic> _itemComponenteToInsertRow(ItemComponente item) {
     'quantidade': item.quantidade,
     'perda_percentual': item.perdaPercentual,
   };
+}
+
+TipoComponente _tipoComponenteFromRow(Map<String, dynamic> row) {
+  return TipoComponente(
+    id: row['id'] as int,
+    nome: row['nome'] as String,
+    dataCriacao: DateTime.parse(row['data_criacao'] as String),
+  );
 }
 
 class ComponenteRepository {
@@ -130,5 +136,27 @@ class ComponenteRepository {
     final rows =
         await _client.from(_tableItens).select().eq('insumo_id', insumoId);
     return rows.map(_itemComponenteFromRow).toList();
+  }
+
+  Stream<List<TipoComponente>> getAllTipos() {
+    return _client
+        .from(_tableTipos)
+        .stream(primaryKey: ['id'])
+        .order('nome')
+        .map((rows) => rows.map(_tipoComponenteFromRow).toList());
+  }
+
+  Future<List<TipoComponente>> getTiposOnce() async {
+    final rows = await _client.from(_tableTipos).select();
+    return rows.map(_tipoComponenteFromRow).toList();
+  }
+
+  Future<int> insertTipo(String nome) async {
+    final row = await _client
+        .from(_tableTipos)
+        .insert({'nome': nome})
+        .select()
+        .single();
+    return row['id'] as int;
   }
 }

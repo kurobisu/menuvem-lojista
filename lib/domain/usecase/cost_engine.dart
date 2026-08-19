@@ -108,15 +108,17 @@ Stream<List<ProdutoComponenteCompleto>> getProdutoComponentes({
   required InsumoRepository insumoRepository,
   required int produtoId,
 }) {
-  return Rx.combineLatest4(
+  return Rx.combineLatest5(
     produtoRepository.getProdutoComponentesByProduto(produtoId),
     componenteRepository.getAllComponentes(),
     componenteRepository.getAllItensComponente(),
     insumoRepository.getAllInsumos(),
-    (vinculos, componentes, itens, insumos) {
+    componenteRepository.getAllTipos(),
+    (vinculos, componentes, itens, insumos, tipos) {
       final componentesById = {for (final c in componentes) c.id: c};
       final itensByComponente = itens.groupListsBy((i) => i.componenteId);
       final insumosById = {for (final i in insumos) i.id: i};
+      final tiposById = {for (final t in tipos) t.id: t};
 
       return vinculos
           .map((vinculo) {
@@ -136,6 +138,7 @@ Stream<List<ProdutoComponenteCompleto>> getProdutoComponentes({
               vinculo: vinculo,
               componente: componente,
               itens: itensEnriquecidos,
+              tipoNome: tiposById[componente.tipoComponenteId]?.nome,
             );
           })
           .nonNulls
@@ -151,13 +154,15 @@ Stream<List<ComponenteComCusto>> getComponentes({
   required ComponenteRepository componenteRepository,
   required InsumoRepository insumoRepository,
 }) {
-  return Rx.combineLatest3(
+  return Rx.combineLatest4(
     componenteRepository.getAllComponentes(),
     componenteRepository.getAllItensComponente(),
     insumoRepository.getAllInsumos(),
-    (componentes, itens, insumos) {
+    componenteRepository.getAllTipos(),
+    (componentes, itens, insumos, tipos) {
       final itensByComponente = itens.groupListsBy((i) => i.componenteId);
       final insumosById = {for (final i in insumos) i.id: i};
+      final tiposById = {for (final t in tipos) t.id: t};
 
       return componentes.map((componente) {
         final itensEnriquecidos =
@@ -170,7 +175,11 @@ Stream<List<ComponenteComCusto>> getComponentes({
                 })
                 .nonNulls
                 .toList();
-        return ComponenteComCusto(componente: componente, itens: itensEnriquecidos);
+        return ComponenteComCusto(
+          componente: componente,
+          itens: itensEnriquecidos,
+          tipoNome: tiposById[componente.tipoComponenteId]?.nome,
+        );
       }).toList();
     },
   );

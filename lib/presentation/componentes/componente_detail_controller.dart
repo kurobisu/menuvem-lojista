@@ -1,7 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../domain/model/item_componente.dart';
-import '../../domain/model/tipo_componente.dart';
 import '../../domain/usecase/componente_usecases.dart' as usecase;
 import '../../providers/repository_providers.dart';
 
@@ -10,11 +9,16 @@ class ComponenteDetailActions {
   final Ref ref;
   final int componenteId;
 
-  Future<void> updateComponente(String nome, TipoComponente tipo) async {
+  Future<void> updateComponente(String nome, String? tipoNome) async {
     final repo = ref.read(componenteRepositoryProvider);
     final c = await repo.getComponenteById(componenteId);
     if (c == null) return;
-    await repo.updateComponente(c.copyWith(nome: nome, tipo: tipo));
+    final tipoId = await usecase.resolveTipoComponenteId(repo, tipoNome);
+    await repo.updateComponente(c.copyWith(
+      nome: nome,
+      tipoComponenteId: tipoId,
+      clearTipoComponenteId: tipoId == null,
+    ));
   }
 
   Future<void> deleteComponente() async {
